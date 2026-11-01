@@ -6,7 +6,7 @@ Proyecto evaluativo de Ingenieria Web desarrollado en Next.js (App Router), Reac
 
 El sistema cuenta con usuarios precargados en la base de datos de Supabase:
 
-| Rol | Correo Electronico | Contrasena | Permisos |
+| Rol | Correo Electronico | Contraseña | Permisos |
 | :--- | :--- | :--- | :--- |
 | **ADMIN** | `admin@biblioteca.com` | `admin123` | Acceso total: Maestros (crear y ver), Usuarios (administrar), Transacciones |
 | **USER** | `lector@biblioteca.com` | `user123` | Acceso a Maestros (solo ver) y Transacciones |
