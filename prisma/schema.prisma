@@ -1,7 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Esquema de Prisma para el Sistema de Gestion de Biblioteca (BiblioLove)
+// Documentacion: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client"
@@ -12,61 +10,38 @@ datasource db {
   provider = "postgresql"
 }
 
+// Roles disponibles en el sistema
 enum Enum_Role {
   ADMIN
   USER
 }
 
-enum Enum_Order_Status {
-  PENDING
-  COMPLETED
-  PAID
-  DELIVERED
-  CANCELED
-  SHIPPED
+// Tipos de movimiento de inventario en la biblioteca
+enum Enum_Movimiento_Tipo {
+  ENTRADA // Ingreso de libros al inventario
+  SALIDA  // Prestamo o retiro de libros del inventario
 }
 
-enum Enum_PaymentMethod {
-  CREDIT_CARD
-  DEBIT_CARD
-  PAYPAL
-  CASH
-}
-
-enum Enum_PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
-
+// Usuario del sistema con autenticacion por email y password
 model User {
-  id        String    @id @default(cuid())
-  name      String
-  email     String    @unique
-  lastName  String?
-  password  String
-  deleted   Boolean   @default(false)
-  enabled   Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  role      Enum_Role @default(USER)
-  profile   Profile?
+  id         String      @id @default(cuid())
+  name       String
+  email      String      @unique
+  lastName   String?
+  password   String
+  deleted    Boolean     @default(false)
+  enabled    Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  role       Enum_Role   @default(USER)
+  profile    Profile?
+  // Maestros creados por este usuario
+  maestros   Maestro[]
+  // Movimientos registrados por este usuario
+  movimientos Movimiento[]
 }
 
-model Customer {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  phone     String
-  address   String
-  deleted   Boolean  @default(false)
-  enabled   Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  orders    Order[]
-}
-
+// Perfil extendido del usuario con datos de contacto
 model Profile {
   id        String   @id @default(cuid())
   address   String
@@ -78,79 +53,36 @@ model Profile {
   userId    String   @unique
 }
 
-model Product {
-  id          String      @id @default(cuid())
-  name        String
-  description String
-  price       Float
-  cantidad    Int
-  codigo      Int
-  deleted     Boolean     @default(false)
-  enabled     Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  categories  Category[]
-  suppliers   Supplier[]
-  orderItems  OrderItem[]
+// Maestro representa un tipo de libro o material en la biblioteca.
+// Cada maestro tiene un saldo que refleja las unidades disponibles.
+model Maestro {
+  id          String       @id @default(cuid())
+  nombre      String
+  // Saldo actual de unidades disponibles en inventario
+  saldo       Float        @default(0)
+  deleted     Boolean      @default(false)
+  enabled     Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  // Usuario que creo este maestro
+  creadoPor   User         @relation(fields: [userId], references: [id])
+  userId      String
+  // Movimientos asociados a este maestro
+  movimientos Movimiento[]
 }
 
-model Category {
-  id          String    @id @default(cuid())
-  name        String
-  description String
-  deleted     Boolean   @default(false)
-  enabled     Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
-}
-
-model Supplier {
-  id          String    @id @default(cuid())
-  name        String
-  description String
-  deleted     Boolean   @default(false)
-  enabled     Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
-}
-
-model Order {
-  id             String            @id @default(cuid())
-  orderDate      DateTime          @default(now())
-  subTotalAmount Float
-  taxAmount      Float
-  totalAmount    Float
-  status         Enum_Order_Status
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  customer       Customer          @relation(fields: [customerId], references: [id])
-  customerId     String
-  orderItems     OrderItem[]
-  payment        Payment?
-}
-
-model OrderItem {
-  id        String   @id @default(cuid())
-  quantity  Int
-  price     Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id])
-}
-
-model Payment {
-  id          String             @id @default(cuid())
-  paymentDate DateTime           @default(now())
-  amount      Float
-  method      Enum_PaymentMethod
-  status      Enum_PaymentStatus @default(PENDING)
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  oderId      String             @unique
-  order       Order              @relation(fields: [oderId], references: [id])
+// Movimiento registra cada transaccion de entrada o salida de un maestro.
+// El saldo del maestro se recalcula sumando todos sus movimientos.
+model Movimiento {
+  id         String               @id @default(cuid())
+  tipo       Enum_Movimiento_Tipo
+  cantidad   Float
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  // Maestro al que pertenece este movimiento
+  maestro    Maestro              @relation(fields: [maestroId], references: [id])
+  maestroId  String
+  // Usuario que registro el movimiento
+  ejecutadoPor User              @relation(fields: [userId], references: [id])
+  userId       String
 }

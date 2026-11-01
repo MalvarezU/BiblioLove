@@ -11,8 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import {
   Field,
-  FieldContent,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -37,15 +35,15 @@ import { Spinner } from '@/components/ui/spinner';
 import { useRouter } from 'next/navigation';
 
 const items = [
-  { label: 'Administrator', value: 'ADMIN' },
-  { label: 'User', value: 'USER' },
+  { label: 'Administrador (ADMIN)', value: 'ADMIN' },
+  { label: 'Usuario Lector (USER)', value: 'USER' },
 ];
 
 const formSchema = z.object({
-  name: z.string().min(2, 'name  must be at least 2 characters.'),
+  name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres.'),
   lastName: z.string(),
-  email: z.email(),
-  role: z.string().min(1, 'Please select your role.'),
+  email: z.string().email('Ingresa un correo valido.'),
+  role: z.string().min(1, 'Selecciona un rol.'),
 });
 
 export function DialogDemo() {
@@ -55,13 +53,14 @@ export function DialogDemo() {
       name: '',
       lastName: '',
       email: '',
-      role: '',
+      role: 'USER',
     },
   });
 
   const [loading, setLoading] = React.useState(false);
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
+
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setLoading(true);
     try {
@@ -71,21 +70,20 @@ export function DialogDemo() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ user: data }),
-      }).then((res) => {
-        toast.success('User created successfully');
-        setLoading(false);
-        router.push('/users');
-        setOpen(false);
-        return res;
       });
 
       if (!response.ok) {
-        setLoading(false);
-        throw new Error('Failed to create user');
+        throw new Error('Error al crear usuario');
       }
+
+      toast.success('Usuario creado exitosamente');
+      form.reset();
+      setOpen(false);
+      router.refresh();
     } catch (error) {
-      console.error('Error submitting  form', error);
-      toast.error('Failed to create user, Please try again');
+      console.error('Error al enviar formulario:', error);
+      toast.error('Error al crear usuario. Intenta de nuevo.');
+    } finally {
       setLoading(false);
     }
   }
@@ -93,12 +91,21 @@ export function DialogDemo() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <form id='form-rhf-demo' onSubmit={form.handleSubmit(onSubmit)}>
-        <DialogTrigger render={<Button type='button'>CREAR USUARIO</Button>} />
-        <DialogContent className='sm:max-w-sm'>
+        <DialogTrigger
+          render={
+            <Button
+              type='button'
+              className='bg-blue-600 hover:bg-blue-700 text-white font-medium'
+            >
+              + Crear Usuario
+            </Button>
+          }
+        />
+        <DialogContent className='sm:max-w-sm bg-slate-900 border border-slate-700 text-slate-100'>
           <DialogHeader>
-            <DialogTitle>Create User</DialogTitle>
-            <DialogDescription>
-              Make changes to your profile here. Click save when you&apos;re done.
+            <DialogTitle className='text-slate-100'>Crear Usuario</DialogTitle>
+            <DialogDescription className='text-slate-400'>
+              Registra una nueva cuenta en el sistema de biblioteca.
             </DialogDescription>
           </DialogHeader>
           <FieldGroup>
@@ -107,13 +114,13 @@ export function DialogDemo() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <Label htmlFor='name-1'>Name</Label>
+                  <Label htmlFor='name-1' className='text-slate-300'>Nombre</Label>
                   <Input
                     {...field}
                     aria-invalid={fieldState.invalid}
                     id='name-1'
-                    name='name'
-                    defaultValue='Pedro'
+                    placeholder='Pedro'
+                    className='bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500'
                   />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
@@ -124,13 +131,13 @@ export function DialogDemo() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <Label htmlFor='lastName-1'>LastName</Label>
+                  <Label htmlFor='lastName-1' className='text-slate-300'>Apellido</Label>
                   <Input
                     {...field}
                     aria-invalid={fieldState.invalid}
                     id='lastName-1'
-                    name='lastName'
-                    defaultValue='Duarte'
+                    placeholder='Duarte'
+                    className='bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500'
                   />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
@@ -141,14 +148,14 @@ export function DialogDemo() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <Label htmlFor='email-1'>Email</Label>
+                  <Label htmlFor='email-1' className='text-slate-300'>Correo electronico</Label>
                   <Input
                     {...field}
                     aria-invalid={fieldState.invalid}
                     id='email-1'
                     type='email'
-                    name='email'
-                    defaultValue='Duarte@example.com'
+                    placeholder='pedro@biblioteca.com'
+                    className='bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500'
                   />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
@@ -159,26 +166,27 @@ export function DialogDemo() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field orientation='responsive' data-invalid={fieldState.invalid}>
-                  <FieldContent>
-                    <FieldLabel htmlFor='form-rhf-select-language'>Role</FieldLabel>
-                    <FieldDescription>Select Role.</FieldDescription>
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </FieldContent>
+                  <FieldLabel className='text-slate-300'>Rol</FieldLabel>
                   <Select name={field.name} value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className='w-full max-w-48'>
+                    <SelectTrigger className='w-full max-w-48 bg-slate-800 border-slate-600 text-slate-100'>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className='bg-slate-900 border-slate-700 text-slate-100'>
                       <SelectGroup>
-                        <SelectLabel>Role</SelectLabel>
+                        <SelectLabel className='text-slate-400'>Roles disponibles</SelectLabel>
                         {items.map((item) => (
-                          <SelectItem key={item.value} value={item.value}>
+                          <SelectItem
+                            key={item.value}
+                            value={item.value}
+                            className='hover:bg-slate-800 text-slate-200'
+                          >
                             {item.label}
                           </SelectItem>
                         ))}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
             />
@@ -187,15 +195,27 @@ export function DialogDemo() {
             <Field orientation='horizontal'>
               {!loading ? (
                 <>
-                  <Button type='button' variant='outline' onClick={() => form.reset()}>
-                    Reset
+                  <Button
+                    type='button'
+                    variant='outline'
+                    onClick={() => {
+                      form.reset();
+                      setOpen(false);
+                    }}
+                    className='border-slate-600 text-slate-300 hover:bg-slate-800'
+                  >
+                    Cancelar
                   </Button>
-                  <Button type='submit' form='form-rhf-demo'>
-                    Submit
+                  <Button
+                    type='submit'
+                    form='form-rhf-demo'
+                    className='bg-blue-600 hover:bg-blue-700 text-white font-medium'
+                  >
+                    Guardar
                   </Button>
                 </>
               ) : (
-                <Spinner className='size-8' />
+                <Spinner className='size-8 text-blue-400' />
               )}
             </Field>
           </DialogFooter>
