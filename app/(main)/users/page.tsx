@@ -57,10 +57,10 @@ export default async function UsersPage() {
           </span>
           <div>
             <h1 className="font-heading text-2xl font-semibold tracking-tight">
-              Administracion de Usuarios
+              Administración de Usuarios
             </h1>
             <p className="text-xs text-muted-foreground">
-              Control de roles, cuentas de acceso y estados
+              Control de roles, cuentas de acceso y estados de activación
             </p>
           </div>
         </div>
@@ -70,7 +70,7 @@ export default async function UsersPage() {
 
       {/* Contenedor de la tabla */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <TableActions users={data} />
+        <TableActions users={data} currentUserId={session.id} />
       </div>
     </div>
   );

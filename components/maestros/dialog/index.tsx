@@ -65,16 +65,19 @@ export function DialogCrearMaestro({ userId }: Props) {
       });
 
       if (!response.ok) {
-        throw new Error('Respuesta invalida del servidor');
+        const err = await response.json().catch(() => null);
+        throw new Error(err?.error || 'Respuesta inválida del servidor');
       }
 
       toast.success('Libro registrado exitosamente');
-      form.reset();
+      form.reset({ nombre: '', saldo: 1 });
       setOpen(false);
       router.refresh();
     } catch (error) {
       console.error('Error creando libro:', error);
-      toast.error('Error al registrar el libro. Intenta de nuevo.');
+      toast.error(
+        error instanceof Error ? error.message : 'Error al registrar el libro. Intenta de nuevo.'
+      );
     } finally {
       setLoading(false);
     }
@@ -86,7 +89,7 @@ export function DialogCrearMaestro({ userId }: Props) {
         <DialogTrigger
           render={
             <Button type="button">
-              <IconPlus />
+              <IconPlus className="size-4" />
               Nuevo Libro
             </Button>
           }
@@ -94,15 +97,15 @@ export function DialogCrearMaestro({ userId }: Props) {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <IconBook2 className="size-4 text-primary" />
+              <IconBook2 className="size-5 text-primary" />
               Registrar Nuevo Libro
             </DialogTitle>
             <DialogDescription>
-              Agrega un libro o material bibliografico con su existencia inicial.
+              Agrega una obra o material bibliográfico con su existencia inicial.
             </DialogDescription>
           </DialogHeader>
 
-          <FieldGroup>
+          <FieldGroup className="space-y-4 py-2">
             <Controller
               name="nombre"
               control={form.control}
@@ -110,12 +113,12 @@ export function DialogCrearMaestro({ userId }: Props) {
                 <Field data-invalid={fieldState.invalid}>
                   <Label htmlFor="maestro-nombre" className="flex items-center gap-1.5">
                     <IconBook2 className="size-3.5 text-primary" />
-                    Titulo del Libro / Obra
+                    Título del Libro / Obra
                   </Label>
                   <Input
                     {...field}
                     id="maestro-nombre"
-                    placeholder="Ej: Estructuras de Datos y Algoritmos"
+                    placeholder="Ej: Cien años de soledad"
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -130,7 +133,7 @@ export function DialogCrearMaestro({ userId }: Props) {
                 <Field data-invalid={fieldState.invalid}>
                   <Label htmlFor="maestro-saldo" className="flex items-center gap-1.5">
                     <IconPackage className="size-3.5 text-primary" />
-                    Saldo inicial (Unidades disponibles)
+                    Existencia inicial (Unidades disponibles)
                   </Label>
                   <Input
                     id="maestro-saldo"
@@ -147,31 +150,22 @@ export function DialogCrearMaestro({ userId }: Props) {
             />
           </FieldGroup>
 
-          <DialogFooter>
-            <Field orientation="horizontal">
-              {loading ? (
-                <Button disabled>
-                  <Spinner />
-                  Guardando...
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      form.reset();
-                      setOpen(false);
-                    }}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button type="submit" form="form-maestro">
-                    Guardar Libro
-                  </Button>
-                </>
-              )}
-            </Field>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={loading}
+              onClick={() => {
+                form.reset();
+                setOpen(false);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" form="form-maestro" disabled={loading}>
+              {loading && <Spinner className="size-4 mr-2" />}
+              {loading ? 'Guardando...' : 'Guardar Libro'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </form>
