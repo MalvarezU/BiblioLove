@@ -21,7 +21,7 @@ export default function MainLayout({
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="h-4" />
             <div className="flex items-center gap-2 text-sm">
-              <span className="font-medium">BiblioLove</span>
+              <span className="font-medium">Biblio<span className="italic text-primary">Love</span></span>
               <span className="text-muted-foreground">/</span>
               <span className="text-muted-foreground">Gestion de Biblioteca</span>
             </div>

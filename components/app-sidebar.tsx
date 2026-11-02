@@ -55,7 +55,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
           <div className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="font-heading text-sm font-semibold tracking-tight">
-              BiblioLove
+              Biblio<span className="italic text-primary">Love</span>
             </span>
             <span className="truncate text-xs text-sidebar-foreground/60">
               Sistema Bibliotecario
