@@ -77,6 +77,54 @@ async function main() {
     console.log(`Ya existen ${countMaestros} maestros en la base de datos.`);
   }
 
+  // 4. Crear movimientos de prueba si la tabla esta vacia
+  const countMovimientos = await prisma.movimiento.count();
+  if (countMovimientos === 0) {
+    const maestrosExistentes = await prisma.maestro.findMany({ where: { deleted: false } });
+    const hoy = new Date();
+    const diasAtras = (n: number) => {
+      const d = new Date(hoy);
+      d.setDate(d.getDate() - n);
+      return d;
+    };
+
+    for (const m of maestrosExistentes) {
+      // Entrada inicial que refleja el saldo base
+      await prisma.movimiento.create({
+        data: {
+          tipo: 'ENTRADA',
+          cantidad: Math.max(1, Math.round(m.saldo * 0.6)),
+          maestroId: m.id,
+          userId: admin.id,
+          createdAt: diasAtras(6),
+        },
+      });
+      // Salida de prueba
+      await prisma.movimiento.create({
+        data: {
+          tipo: 'SALIDA',
+          cantidad: Math.max(1, Math.round(m.saldo * 0.2)),
+          maestroId: m.id,
+          userId: admin.id,
+          createdAt: diasAtras(4),
+        },
+      });
+      // Entrada reciente
+      await prisma.movimiento.create({
+        data: {
+          tipo: 'ENTRADA',
+          cantidad: Math.max(1, Math.round(m.saldo * 0.1)),
+          maestroId: m.id,
+          userId: regularUser.id,
+          createdAt: diasAtras(1),
+        },
+      });
+    }
+    console.log('Movimientos de prueba creados.');
+  } else {
+    console.log(`Ya existen ${countMovimientos} movimientos en la base de datos.`);
+  }
+
   console.log('Seed completado con exito.');
 }
 
