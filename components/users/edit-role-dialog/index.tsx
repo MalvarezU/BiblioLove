@@ -55,25 +55,25 @@ export function EditRoleDialog({ user }: Props) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="outline" size="sm" className="border-slate-700 text-slate-300 hover:bg-slate-800 text-xs">
+          <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted text-xs">
             Editar rol
           </Button>
         }
       />
-      <DialogContent className="sm:max-w-sm bg-slate-900 border border-slate-700 text-slate-100">
+      <DialogContent className="sm:max-w-sm bg-card border border-border text-foreground">
         <DialogHeader>
-          <DialogTitle className="text-slate-100">Editar usuario</DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogTitle className="text-foreground">Editar usuario</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             {user.email}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Rol</label>
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rol</label>
           <Select value={role} onValueChange={(v) => setRole(v as 'ADMIN' | 'USER')}>
-            <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
+            <SelectTrigger className="bg-muted border-border text-foreground">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-slate-900 border-slate-700 text-slate-100">
+            <SelectContent className="bg-card border-border text-foreground">
               <SelectItem value="ADMIN">ADMIN</SelectItem>
               <SelectItem value="USER">USER</SelectItem>
             </SelectContent>
@@ -82,15 +82,15 @@ export function EditRoleDialog({ user }: Props) {
         <DialogFooter>
           {!loading ? (
             <>
-              <Button variant="outline" onClick={() => setOpen(false)} className="border-slate-600 text-slate-300 hover:bg-slate-800">
+              <Button variant="outline" onClick={() => setOpen(false)} className="border-border text-foreground hover:bg-muted">
                 Cancelar
               </Button>
-              <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
                 Guardar
               </Button>
             </>
           ) : (
-            <Spinner className="size-6 text-blue-400" />
+            <Spinner className="size-6 text-primary" />
           )}
         </DialogFooter>
       </DialogContent>
