@@ -432,10 +432,10 @@ export default function TransaccionesPage() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table>
+            <Table className="min-w-[600px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="pl-6">ID</TableHead>
+                  <TableHead className="hidden sm:table-cell pl-6">ID</TableHead>
                   <TableHead>Fecha</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Cantidad</TableHead>
@@ -450,7 +450,7 @@ export default function TransaccionesPage() {
                 ) : movimientos.length > 0 ? (
                   movimientos.map((m) => (
                     <TableRow key={m.id}>
-                      <TableCell className="pl-6 font-mono text-xs text-muted-foreground">{m.id.slice(0, 8)}</TableCell>
+                      <TableCell className="hidden sm:table-cell pl-6 font-mono text-xs text-muted-foreground">{m.id.slice(0, 8)}</TableCell>
                       <TableCell className="text-xs">{new Date(m.createdAt).toLocaleString('es-CO')}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${m.tipo === 'ENTRADA' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
