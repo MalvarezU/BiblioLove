@@ -66,3 +66,14 @@ La aplicacion estara disponible en [http://localhost:3000](http://localhost:3000
 - `/maestros`: Gestion del catalogo de libros y saldos de inventario 
 - `/transacciones`: Registro de prestamos y devoluciones 
 - `/users`: Administracion de usuarios y asignacion de roles
+
+---
+
+## Integrantes del equipo
+
+- Integrante 1
+- Integrante 2
+
+## Despliegue
+
+- Vercel: https://nombreEquipoFuncionalidad.vercel.app

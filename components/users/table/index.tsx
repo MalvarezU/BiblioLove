@@ -1,11 +1,3 @@
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -14,13 +6,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  IconDotsVertical,
-  IconShieldCheck,
-  IconUser,
-  IconUsers,
-} from '@tabler/icons-react';
-import Link from 'next/link';
+import { IconShieldCheck, IconUser, IconUsers } from '@tabler/icons-react';
+import { EditRoleDialog } from '@/components/users/edit-role-dialog';
 
 type UserItem = {
   id: string;
@@ -42,6 +29,7 @@ export function TableActions({ users }: { users: UserItem[] }) {
           <TableRow className="hover:bg-transparent">
             <TableHead className="pl-6">Usuario</TableHead>
             <TableHead>Correo Electronico</TableHead>
+            <TableHead>Fecha de creacion</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Rol</TableHead>
             <TableHead className="pr-6 text-right">Acciones</TableHead>
@@ -70,6 +58,10 @@ export function TableActions({ users }: { users: UserItem[] }) {
                   </TableCell>
 
                   <TableCell className="text-sm">{user.email}</TableCell>
+
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(user.createdAt).toLocaleDateString('es-CO')}
+                  </TableCell>
 
                   <TableCell>
                     <span
@@ -106,35 +98,16 @@ export function TableActions({ users }: { users: UserItem[] }) {
                   </TableCell>
 
                   <TableCell className="pr-6 text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label="Abrir menu"
-                          >
-                            <IconDotsVertical />
-                          </Button>
-                        }
-                      />
-                      <DropdownMenuContent align="end">
-                        <Link href={`/users/${user.id}`}>
-                          <DropdownMenuItem>Ver detalles</DropdownMenuItem>
-                        </Link>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive">
-                          Desactivar usuario
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center justify-end gap-2">
+                      <EditRoleDialog key={user.id} user={{ id: user.id, email: user.email, role: user.role }} />
+                    </div>
                   </TableCell>
                 </TableRow>
               );
             })
           ) : (
             <TableRow>
-              <TableCell colSpan={5} className="h-32 text-center">
+              <TableCell colSpan={6} className="h-32 text-center">
                 <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                   <IconUsers className="size-8 stroke-1" />
                   <p className="text-sm font-medium">
