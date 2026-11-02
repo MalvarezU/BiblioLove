@@ -1,3 +1,20 @@
+/**
+ * BibloLove — Sistema de Identidad Visual (tokens).
+ *
+ * Paleta (manual de identidad):
+ *   - Crema papel  (background) : hsl(40 33% 98%)   #FCFAF8  (60% de la UI)
+ *   - Tinta cafe   (foreground) : hsl(24 10% 15%)   #2A2522  (30%)
+ *   - Borgona love (primary)    : hsl(348 63% 47%)  #C32C4B  (10%, acciones/marca)
+ *   - Dorado       (rating)     : hsl(38 80% 50%)   #E69B19  (solo valoracion)
+ *   - Chocolate    (dark bg)    : hsl(20 8% 10%)    #1C1917  (modo oscuro)
+ *
+ * Tipografia: Fraunces (display/titulos) + Inter (cuerpo) via next/font.
+ * Radios: 12px base, 16px dialogos, pill en CTAs.
+ * Sombras con tinte borgona (no gris puro).
+ *
+ * Prohibido: azul/indigo, negro #000 como fondo, colores fuera de la paleta,
+ * dorado para algo distinto a valoracion.
+ */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
