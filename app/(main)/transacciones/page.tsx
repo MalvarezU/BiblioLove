@@ -225,6 +225,7 @@ export default function TransaccionesPage() {
   const [submitting, setSubmitting] = React.useState(false);
   const [tipo, setTipo] = React.useState<'ENTRADA' | 'SALIDA'>('ENTRADA');
   const [cantidad, setCantidad] = React.useState<number>(1);
+  const [filtroTipo, setFiltroTipo] = React.useState<'TODOS' | 'ENTRADA' | 'SALIDA'>('TODOS');
 
   const sessionUser = React.useMemo(() => {
     if (typeof window === 'undefined') return null;
@@ -280,6 +281,21 @@ export default function TransaccionesPage() {
   }, [selected]);
 
   const maestroSeleccionado = maestros.find((m) => m.id === selected);
+
+  const movimientosFiltrados = React.useMemo(() => {
+    if (filtroTipo === 'TODOS') return movimientos;
+    return movimientos.filter((m) => m.tipo === filtroTipo);
+  }, [movimientos, filtroTipo]);
+
+  const resumen = React.useMemo(() => {
+    let entradas = 0;
+    let salidas = 0;
+    movimientos.forEach((m) => {
+      if (m.tipo === 'ENTRADA') entradas += m.cantidad;
+      else salidas += m.cantidad;
+    });
+    return { entradas, salidas, neto: entradas - salidas, total: movimientos.length };
+  }, [movimientos]);
 
   async function crearMovimiento() {
     if (!selected || !sessionUser?.id) {
@@ -426,6 +442,51 @@ export default function TransaccionesPage() {
         </Dialog>
       </div>
 
+      {/* Resumen e innovacion: totales y filtro por tipo */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Movimientos</p>
+            <p className="mt-1 font-mono text-2xl font-semibold">{resumen.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Entradas</p>
+            <p className="mt-1 font-mono text-2xl font-semibold text-success">{resumen.entradas}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Salidas</p>
+            <p className="mt-1 font-mono text-2xl font-semibold text-destructive">{resumen.salidas}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Neto</p>
+            <p className="mt-1 font-mono text-2xl font-semibold">{resumen.neto}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Label className="text-xs uppercase tracking-wider text-muted-foreground">Filtrar por tipo</Label>
+        <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v as 'TODOS' | 'ENTRADA' | 'SALIDA')}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="TODOS">Todos</SelectItem>
+            <SelectItem value="ENTRADA">Entrada</SelectItem>
+            <SelectItem value="SALIDA">Salida</SelectItem>
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-muted-foreground">
+          Mostrando {movimientosFiltrados.length} de {movimientos.length}
+        </span>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">Movimientos del maestro seleccionado</CardTitle>
@@ -447,8 +508,8 @@ export default function TransaccionesPage() {
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">Cargando...</TableCell>
                   </TableRow>
-                ) : movimientos.length > 0 ? (
-                  movimientos.map((m) => (
+                ) : movimientosFiltrados.length > 0 ? (
+                  movimientosFiltrados.map((m) => (
                     <TableRow key={m.id}>
                       <TableCell className="hidden sm:table-cell pl-6 font-mono text-xs text-muted-foreground">{m.id.slice(0, 8)}</TableCell>
                       <TableCell className="text-xs">{new Date(m.createdAt).toLocaleString('es-CO')}</TableCell>
