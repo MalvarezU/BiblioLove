@@ -26,7 +26,8 @@ export function LogoutButton({
       await fetch('/api/login', { method: 'DELETE' });
       localStorage.removeItem('session_user');
       toast.success('Sesion cerrada correctamente');
-      router.push('/login');
+      router.push('/');
+      router.refresh();
     } catch (error) {
       console.error('Error al cerrar sesion:', error);
       toast.error('Error al cerrar sesion');

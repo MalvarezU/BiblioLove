@@ -60,7 +60,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'div'>) 
           <div className="mb-1 flex size-11 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <IconBook2 className="size-6" />
           </div>
-          <CardTitle className="font-heading text-xl">BiblioLove</CardTitle>
+          <CardTitle className="font-heading text-xl">Biblio<span className="italic text-primary">Love</span></CardTitle>
           <CardDescription>
             Inicia sesion para acceder a tu biblioteca
           </CardDescription>
