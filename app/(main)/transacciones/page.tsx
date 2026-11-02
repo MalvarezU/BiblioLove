@@ -43,7 +43,9 @@ type Movimiento = {
 };
 
 function GraficaSaldos({ movimientos, saldoActual }: { movimientos: Movimiento[]; saldoActual: number }) {
-  const puntos = React.useMemo(() => {
+  const [hover, setHover] = React.useState<number | null>(null);
+
+  const data = React.useMemo(() => {
     if (movimientos.length === 0) return [];
     const ordenados = [...movimientos].sort(
       (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -63,47 +65,155 @@ function GraficaSaldos({ movimientos, saldoActual }: { movimientos: Movimiento[]
 
     const dias = Array.from(porDia.keys()).sort();
     let acum = base;
-    const pts: { valor: number }[] = [];
-    dias.forEach((dia) => {
+    return dias.map((dia) => {
       acum += porDia.get(dia) ?? 0;
-      pts.push({ valor: acum });
+      return { dia, valor: acum };
     });
-    return pts;
   }, [movimientos, saldoActual]);
 
-  if (puntos.length === 0) {
+  if (data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-        Sin movimientos para graficar
+      <div className="flex h-48 flex-col items-center justify-center gap-1 text-sm text-muted-foreground">
+        <span>Sin movimientos para graficar</span>
+        <span className="text-xs">Agrega un movimiento para ver la evolucion del saldo.</span>
       </div>
     );
   }
 
-  const width = 600;
-  const height = 200;
-  const padding = 30;
-  const valores = puntos.map((p) => p.valor);
+  const width = 640;
+  const height = 220;
+  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+  const plotW = width - padding.left - padding.right;
+  const plotH = height - padding.top - padding.bottom;
+
+  const valores = data.map((d) => d.valor);
   const min = Math.min(...valores);
   const max = Math.max(...valores);
   const range = max - min || 1;
 
-  const xs = puntos.map((_, i) => padding + (i / Math.max(puntos.length - 1, 1)) * (width - 2 * padding));
-  const ys = puntos.map((p) => height - padding - ((p.valor - min) / range) * (height - 2 * padding));
-  const path = puntos.map((_, i) => `${i === 0 ? 'M' : 'L'} ${xs[i]} ${ys[i]}`).join(' ');
+  const xs = data.map((_, i) => padding.left + (i / Math.max(data.length - 1, 1)) * plotW);
+  const ys = data.map((d) => padding.top + plotH - ((d.valor - min) / range) * plotH);
+
+  const linePath = data.map((_, i) => `${i === 0 ? 'M' : 'L'} ${xs[i]} ${ys[i]}`).join(' ');
+  const areaPath = `${linePath} L ${xs[xs.length - 1]} ${padding.top + plotH} L ${xs[0]} ${padding.top + plotH} Z`;
+
+  const hovered = hover !== null ? data[hover] : null;
+  const hx = hover !== null ? xs[hover] : 0;
+  const hy = hover !== null ? ys[hover] : 0;
+
+  const fmt = (n: number) => n.toLocaleString('es-CO');
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-48">
-      <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="currentColor" className="text-border" strokeWidth="1" />
-      <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="currentColor" className="text-border" strokeWidth="1" />
-      <path d={path} fill="none" stroke="currentColor" className="text-primary" strokeWidth="2" />
-      {puntos.map((p, i) => (
-        <circle key={i} cx={xs[i]} cy={ys[i]} r="3" fill="currentColor" className="text-primary" />
-      ))}
-      <text x={padding} y={14} className="fill-muted-foreground text-[10px]">Max: {max}</text>
-      <text x={padding} y={height - 4} className="fill-muted-foreground text-[10px]">Min: {min}</text>
-    </svg>
+    <div className="space-y-3">
+      <div className="relative">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full h-56 select-none"
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * width;
+            let nearest = 0;
+            let best = Infinity;
+            xs.forEach((px, i) => {
+              const d = Math.abs(px - x);
+              if (d < best) {
+                best = d;
+                nearest = i;
+              }
+            });
+            setHover(nearest);
+          }}
+          onMouseLeave={() => setHover(null)}
+        >
+          <defs>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="currentColor" className="text-primary" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="currentColor" className="text-primary" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
+          {[0, 0.25, 0.5, 0.75, 1].map((t, i) => {
+            const y = padding.top + plotH * (1 - t);
+            return (
+              <line
+                key={i}
+                x1={padding.left}
+                y1={y}
+                x2={width - padding.right}
+                y2={y}
+                stroke="currentColor"
+                className="text-border"
+                strokeWidth="1"
+                strokeDasharray="3 3"
+              />
+            );
+          })}
+
+          <line x1={padding.left} y1={padding.top + plotH} x2={width - padding.right} y2={padding.top + plotH} stroke="currentColor" className="text-border" strokeWidth="1" />
+          <line x1={padding.left} y1={padding.top} x2={padding.left} y2={padding.top + plotH} stroke="currentColor" className="text-border" strokeWidth="1" />
+
+          <text x={padding.left - 6} y={padding.top + 4} textAnchor="end" className="fill-muted-foreground text-[10px]">{fmt(max)}</text>
+          <text x={padding.left - 6} y={padding.top + plotH + 4} textAnchor="end" className="fill-muted-foreground text-[10px]">{fmt(min)}</text>
+
+          <path d={areaPath} fill="url(#areaGrad)" />
+
+          <path d={linePath} fill="none" stroke="currentColor" className="text-primary" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+
+          {data.map((_, i) => (
+            <circle
+              key={i}
+              cx={xs[i]}
+              cy={ys[i]}
+              r={hover === i ? 5 : 3}
+              fill="currentColor"
+              className="text-primary transition-all"
+            />
+          ))}
+
+          {hover !== null && (
+            <line
+              x1={hx}
+              y1={padding.top}
+              x2={hx}
+              y2={padding.top + plotH}
+              stroke="currentColor"
+              className="text-primary"
+              strokeWidth="1"
+              strokeDasharray="4 3"
+              opacity="0.5"
+            />
+          )}
+        </svg>
+
+        {hover !== null && hovered && (
+          <div
+            className="pointer-events-none absolute z-10 rounded-md border border-border bg-popover px-2.5 py-1.5 text-xs shadow-md"
+            style={{
+              left: `${(hx / width) * 100}%`,
+              top: `${(hy / height) * 100}%`,
+              transform: 'translate(-50%, -120%)',
+            }}
+          >
+            <div className="font-medium text-foreground">{hovered.dia}</div>
+            <div className="font-mono text-primary">{fmt(hovered.valor)} u.</div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-primary" />
+          Saldo diario
+        </span>
+        <span>Puntos: <span className="font-mono text-foreground">{data.length}</span></span>
+        <span>Min: <span className="font-mono text-foreground">{fmt(min)}</span></span>
+        <span>Max: <span className="font-mono text-foreground">{fmt(max)}</span></span>
+        <span>Actual: <span className="font-mono text-foreground">{fmt(data[data.length - 1].valor)}</span></span>
+      </div>
+    </div>
   );
 }
+
 
 export default function TransaccionesPage() {
   const [maestros, setMaestros] = React.useState<Maestro[]>([]);
