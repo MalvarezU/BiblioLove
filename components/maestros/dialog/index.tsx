@@ -41,7 +41,7 @@ type Props = {
   userId: string;
 };
 
-// DialogCrearMaestro permite a los administradores registrar nuevos libros en el inventario
+// DialogCrearMaestro permite a los administradores registrar nuevos libros
 export function DialogCrearMaestro({ userId }: Props) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
@@ -68,12 +68,12 @@ export function DialogCrearMaestro({ userId }: Props) {
         throw new Error('Respuesta invalida del servidor');
       }
 
-      toast.success('Maestro creado exitosamente en Supabase');
+      toast.success('Libro registrado exitosamente');
       form.reset();
       setOpen(false);
       router.refresh();
     } catch (error) {
-      console.error('Error creando maestro:', error);
+      console.error('Error creando libro:', error);
       toast.error('Error al registrar el libro. Intenta de nuevo.');
     } finally {
       setLoading(false);
@@ -85,39 +85,31 @@ export function DialogCrearMaestro({ userId }: Props) {
       <form id="form-maestro" onSubmit={form.handleSubmit(onSubmit)}>
         <DialogTrigger
           render={
-            <Button
-              type="button"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium shadow-md shadow-blue-900/30 px-4 py-2 rounded-lg text-sm transition-all"
-            >
-              <IconPlus className="size-4" />
-              <span>Nuevo Maestro</span>
+            <Button type="button">
+              <IconPlus />
+              Nuevo Libro
             </Button>
           }
         />
-        <DialogContent className="sm:max-w-md bg-slate-900/95 border border-slate-800 text-slate-100 shadow-2xl backdrop-blur-xl rounded-xl">
-          <DialogHeader className="space-y-1">
-            <div className="flex items-center gap-2.5">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                <IconBook2 className="size-4" />
-              </div>
-              <DialogTitle className="text-slate-100 text-lg font-bold">
-                Registrar Nuevo Maestro
-              </DialogTitle>
-            </div>
-            <DialogDescription className="text-slate-400 text-xs">
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <IconBook2 className="size-4 text-primary" />
+              Registrar Nuevo Libro
+            </DialogTitle>
+            <DialogDescription>
               Agrega un libro o material bibliografico con su existencia inicial.
             </DialogDescription>
           </DialogHeader>
 
-          <FieldGroup className="space-y-4 py-2">
-            {/* Nombre del libro */}
+          <FieldGroup>
             <Controller
               name="nombre"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <Label htmlFor="maestro-nombre" className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <IconBook2 className="size-3.5 text-blue-400" />
+                  <Label htmlFor="maestro-nombre" className="flex items-center gap-1.5">
+                    <IconBook2 className="size-3.5 text-primary" />
                     Titulo del Libro / Obra
                   </Label>
                   <Input
@@ -125,21 +117,19 @@ export function DialogCrearMaestro({ userId }: Props) {
                     id="maestro-nombre"
                     placeholder="Ej: Estructuras de Datos y Algoritmos"
                     aria-invalid={fieldState.invalid}
-                    className="bg-slate-950/80 border-slate-700/80 text-slate-100 placeholder:text-slate-600 focus:border-blue-500 text-sm h-10"
                   />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
             />
 
-            {/* Saldo inicial */}
             <Controller
               name="saldo"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <Label htmlFor="maestro-saldo" className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <IconPackage className="size-3.5 text-blue-400" />
+                  <Label htmlFor="maestro-saldo" className="flex items-center gap-1.5">
+                    <IconPackage className="size-3.5 text-primary" />
                     Saldo inicial (Unidades disponibles)
                   </Label>
                   <Input
@@ -148,7 +138,6 @@ export function DialogCrearMaestro({ userId }: Props) {
                     min={0}
                     placeholder="1"
                     aria-invalid={fieldState.invalid}
-                    className="bg-slate-950/80 border-slate-700/80 text-slate-100 placeholder:text-slate-600 focus:border-blue-500 text-sm h-10 font-mono"
                     value={field.value}
                     onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                   />
@@ -158,12 +147,12 @@ export function DialogCrearMaestro({ userId }: Props) {
             />
           </FieldGroup>
 
-          <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-slate-800/80">
-            <Field orientation="horizontal" className="flex items-center justify-end gap-2 w-full">
+          <DialogFooter>
+            <Field orientation="horizontal">
               {loading ? (
-                <Button disabled className="bg-blue-600 text-white">
-                  <Spinner className="size-4 mr-2" />
-                  Guardando en Supabase...
+                <Button disabled>
+                  <Spinner />
+                  Guardando...
                 </Button>
               ) : (
                 <>
@@ -174,16 +163,11 @@ export function DialogCrearMaestro({ userId }: Props) {
                       form.reset();
                       setOpen(false);
                     }}
-                    className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-slate-100"
                   >
                     Cancelar
                   </Button>
-                  <Button
-                    type="submit"
-                    form="form-maestro"
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium shadow-md shadow-blue-900/30"
-                  >
-                    Guardar Maestro
+                  <Button type="submit" form="form-maestro">
+                    Guardar Libro
                   </Button>
                 </>
               )}

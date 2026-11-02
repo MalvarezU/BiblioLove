@@ -34,20 +34,22 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { useRouter } from 'next/navigation';
+import { IconArrowLeft, IconUserEdit } from '@tabler/icons-react';
+import Link from 'next/link';
 
 const items = [
-  { label: 'Administrator', value: 'ADMIN' },
-  { label: 'User', value: 'USER' },
+  { label: 'Administrador (ADMIN)', value: 'ADMIN' },
+  { label: 'Usuario Lector (USER)', value: 'USER' },
 ];
 
 const formSchema = z.object({
-  name: z.string().min(2, 'name  must be at least 2 characters.'),
+  name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres.'),
   lastName: z.string(),
-  email: z.email(),
-  role: z.string().min(1, 'Please select your role.'),
+  email: z.email('Ingresa un correo valido.'),
+  role: z.string().min(1, 'Selecciona un rol.'),
 });
 
+// Edicion de un usuario existente
 const Edit = () => {
   const params = useParams<{ id: string }>();
   const form = useForm<z.infer<typeof formSchema>>({
@@ -84,7 +86,7 @@ const Edit = () => {
       return data.user;
     } catch (error) {
       console.error('Error Fetching user data', error);
-      toast.error('Failed to load user data. Please try again.');
+      toast.error('No se pudo cargar el usuario. Intenta de nuevo.');
       return null;
     }
   }
@@ -123,100 +125,125 @@ const Edit = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ user: data }),
-      }).then((res) => {
-        toast.success('User created successfully');
-        setLoading(false);
-
-        return res;
       });
 
       if (!response.ok) {
-        setLoading(false);
-        throw new Error('Failed to create user');
+        throw new Error('Failed to update user');
       }
+
+      toast.success('Cambios guardados exitosamente');
     } catch (error) {
-      console.error('Error submitting  form', error);
-      toast.error('Failed to create user, Please try again');
+      console.error('Error submitting form', error);
+      toast.error('Error al actualizar el usuario. Intenta de nuevo.');
+    } finally {
       setLoading(false);
     }
   }
+
   if (!userData) {
-    return <Spinner className='size-8' />;
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Spinner />
+      </div>
+    );
   }
 
   return (
-    <div className=' '>
-      <form id='form-rhf-demo' onSubmit={form.handleSubmit(onSubmit)}>
-        <Card className='w-full sm:max-w-md'>
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <IconUserEdit className="size-5" />
+          </span>
+          <div>
+            <h1 className="font-heading text-2xl font-semibold tracking-tight">
+              Editar Usuario
+            </h1>
+            <p className="text-xs text-muted-foreground">{userData.email}</p>
+          </div>
+        </div>
+        <Button
+          nativeButton={false}
+          variant="outline"
+          render={<Link href="/users" />}
+        >
+          <IconArrowLeft />
+          Volver
+        </Button>
+      </div>
+
+      <form id="form-editar-usuario" onSubmit={form.handleSubmit(onSubmit)}>
+        <Card className="w-full sm:max-w-md">
           <CardHeader>
-            <CardTitle>Create User</CardTitle>
+            <CardTitle>Datos del usuario</CardTitle>
             <CardDescription>
-              Make changes to your profile here. Click save when you&apos;re done.
+              Modifica la informacion de la cuenta. Guarda los cambios cuando
+              estes listo.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <FieldGroup>
               <Controller
-                name='name'
+                name="name"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <Label htmlFor='name-1'>Name</Label>
-                    <Input {...field} aria-invalid={fieldState.invalid} id='name-1' name='name' />
+                    <Label htmlFor="name-1">Nombre</Label>
+                    <Input {...field} aria-invalid={fieldState.invalid} id="name-1" name="name" />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
               />
               <Controller
-                name='lastName'
+                name="lastName"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <Label htmlFor='lastName-1'>LastName</Label>
+                    <Label htmlFor="lastName-1">Apellido</Label>
                     <Input
                       {...field}
                       aria-invalid={fieldState.invalid}
-                      id='lastName-1'
-                      name='lastName'
+                      id="lastName-1"
+                      name="lastName"
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
               />
               <Controller
-                name='email'
+                name="email"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <Label htmlFor='email-1'>Email</Label>
+                    <Label htmlFor="email-1">Correo electronico</Label>
                     <Input
                       {...field}
                       aria-invalid={fieldState.invalid}
-                      id='email-1'
-                      type='email'
-                      name='email'
+                      id="email-1"
+                      type="email"
+                      name="email"
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
               />
               <Controller
-                name='role'
+                name="role"
                 control={form.control}
                 render={({ field, fieldState }) => (
-                  <Field orientation='responsive' data-invalid={fieldState.invalid}>
+                  <Field orientation="responsive" data-invalid={fieldState.invalid}>
                     <FieldContent>
-                      <FieldLabel htmlFor='form-rhf-select-language'>Role</FieldLabel>
-                      <FieldDescription>Select Role.</FieldDescription>
+                      <FieldLabel htmlFor="form-editar-rol">Rol</FieldLabel>
+                      <FieldDescription>Selecciona el rol del usuario.</FieldDescription>
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </FieldContent>
                     <Select name={field.name} value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className='w-full max-w-48'>
+                      <SelectTrigger id="form-editar-rol" className="w-full max-w-48">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectLabel>Role</SelectLabel>
+                          <SelectLabel>Rol</SelectLabel>
                           {items.map((item) => (
                             <SelectItem key={item.value} value={item.value}>
                               {item.label}
@@ -231,18 +258,18 @@ const Edit = () => {
             </FieldGroup>
           </CardContent>
           <CardFooter>
-            <Field orientation='horizontal'>
+            <Field orientation="horizontal">
               {!loading ? (
                 <>
-                  <Button type='button' variant='outline' onClick={() => form.reset()}>
-                    Reset
+                  <Button type="button" variant="outline" onClick={() => form.reset()}>
+                    Restablecer
                   </Button>
-                  <Button type='submit' form='form-rhf-demo'>
-                    Submit
+                  <Button type="submit" form="form-editar-usuario">
+                    Guardar cambios
                   </Button>
                 </>
               ) : (
-                <Spinner className='size-8' />
+                <Spinner />
               )}
             </Field>
           </CardFooter>

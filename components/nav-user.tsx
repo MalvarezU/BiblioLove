@@ -37,14 +37,17 @@ export function NavUser() {
   const [usuario, setUsuario] = useState<UsuarioSesion | null>(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem('session_user');
-    if (raw) {
-      try {
-        setUsuario(JSON.parse(raw));
-      } catch {
-        // Fallback silencioso
+    const raf = requestAnimationFrame(() => {
+      const raw = localStorage.getItem('session_user');
+      if (raw) {
+        try {
+          setUsuario(JSON.parse(raw));
+        } catch {
+          // Fallback silencioso
+        }
       }
-    }
+    });
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   async function handleLogout() {
@@ -73,70 +76,71 @@ export function NavUser() {
             render={
               <SidebarMenuButton
                 size="lg"
-                className="aria-expanded:bg-slate-900 text-slate-300 hover:bg-slate-900 rounded-lg p-2 transition-colors border border-transparent hover:border-slate-800"
+                className="aria-expanded:bg-sidebar-accent group-data-[collapsible=icon]:justify-center"
               />
             }
           >
-            <Avatar className="size-8 rounded-md ring-1 ring-blue-500/30">
-              <AvatarFallback className="rounded-md bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-xs font-bold">
+            <Avatar className="size-8 rounded-md">
+              <AvatarFallback className="rounded-md bg-primary text-xs font-semibold text-primary-foreground">
                 {iniciales}
               </AvatarFallback>
             </Avatar>
-            <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold text-slate-200">{usuario.name}</span>
-              <span className="truncate text-xs text-slate-500">{usuario.email}</span>
+            <div className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+              <span className="truncate text-sm font-semibold">{usuario.name}</span>
+              <span className="truncate text-xs text-muted-foreground">
+                {usuario.email}
+              </span>
             </div>
-            <IconSelector className="ml-auto size-4 text-slate-500" />
+            <IconSelector className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
           </DropdownMenuTrigger>
 
           <DropdownMenuContent
-            className="w-60 bg-slate-900/95 border-slate-800 text-slate-200 shadow-xl backdrop-blur-md"
+            className="w-60"
             side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={6}
           >
             <DropdownMenuLabel className="p-2 font-normal">
               <div className="flex items-center gap-3">
-                <Avatar className="size-9 rounded-md ring-1 ring-blue-500/30">
-                  <AvatarFallback className="rounded-md bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-xs font-bold">
+                <Avatar className="size-9 rounded-md">
+                  <AvatarFallback className="rounded-md bg-primary text-xs font-semibold text-primary-foreground">
                     {iniciales}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm">
-                  <span className="truncate font-semibold text-slate-100">{usuario.name}</span>
-                  <span className="truncate text-xs text-slate-400">{usuario.email}</span>
+                  <span className="truncate font-semibold">{usuario.name}</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {usuario.email}
+                  </span>
                 </div>
               </div>
             </DropdownMenuLabel>
 
-            <DropdownMenuSeparator className="bg-slate-800" />
+            <DropdownMenuSeparator />
 
-            <div className="px-2 py-1.5 flex items-center justify-between text-xs text-slate-400">
+            <div className="flex items-center justify-between px-2 py-1.5 text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 {usuario.role === 'ADMIN' ? (
-                  <IconShieldCheck className="size-4 text-blue-400" />
+                  <IconShieldCheck className="size-4 text-primary" />
                 ) : (
-                  <IconUser className="size-4 text-slate-400" />
+                  <IconUser className="size-4" />
                 )}
                 Rol
               </span>
               <span
-                className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium ${
+                className={`rounded px-2 py-0.5 text-[10px] font-medium ${
                   usuario.role === 'ADMIN'
-                    ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
-                    : 'bg-slate-800 text-slate-300 border border-slate-700'
+                    ? 'bg-primary/15 text-primary'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {usuario.role}
               </span>
             </div>
 
-            <DropdownMenuSeparator className="bg-slate-800" />
+            <DropdownMenuSeparator />
 
-            <DropdownMenuItem
-              className="text-red-400 hover:text-red-300 hover:bg-red-950/40 cursor-pointer flex items-center gap-2 p-2 rounded-md transition-colors"
-              onClick={handleLogout}
-            >
+            <DropdownMenuItem variant="destructive" onClick={handleLogout}>
               <IconLogout className="size-4" />
               <span>Cerrar sesion</span>
             </DropdownMenuItem>

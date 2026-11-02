@@ -33,6 +33,7 @@ import {
 import React from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import { useRouter } from 'next/navigation';
+import { IconPlus, IconUserPlus } from '@tabler/icons-react';
 
 const items = [
   { label: 'Administrador (ADMIN)', value: 'ADMIN' },
@@ -42,11 +43,12 @@ const items = [
 const formSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres.'),
   lastName: z.string(),
-  email: z.string().email('Ingresa un correo valido.'),
+  email: z.email('Ingresa un correo valido.'),
   role: z.string().min(1, 'Selecciona un rol.'),
 });
 
-export function DialogDemo() {
+// DialogCrearUsuario registra una nueva cuenta de usuario
+export function DialogCrearUsuario() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -90,96 +92,90 @@ export function DialogDemo() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <form id='form-rhf-demo' onSubmit={form.handleSubmit(onSubmit)}>
+      <form id="form-crear-usuario" onSubmit={form.handleSubmit(onSubmit)}>
         <DialogTrigger
           render={
-            <Button
-              type='button'
-              className='bg-blue-600 hover:bg-blue-700 text-white font-medium'
-            >
-              + Crear Usuario
+            <Button type="button">
+              <IconPlus />
+              Crear Usuario
             </Button>
           }
         />
-        <DialogContent className='sm:max-w-sm bg-slate-900 border border-slate-700 text-slate-100'>
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className='text-slate-100'>Crear Usuario</DialogTitle>
-            <DialogDescription className='text-slate-400'>
+            <DialogTitle className="flex items-center gap-2">
+              <IconUserPlus className="size-4 text-primary" />
+              Crear Usuario
+            </DialogTitle>
+            <DialogDescription>
               Registra una nueva cuenta en el sistema de biblioteca.
             </DialogDescription>
           </DialogHeader>
           <FieldGroup>
             <Controller
-              name='name'
+              name="name"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <Label htmlFor='name-1' className='text-slate-300'>Nombre</Label>
+                  <Label htmlFor="name-1">Nombre</Label>
                   <Input
                     {...field}
                     aria-invalid={fieldState.invalid}
-                    id='name-1'
-                    placeholder='Pedro'
-                    className='bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500'
+                    id="name-1"
+                    placeholder="Pedro"
                   />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
             />
             <Controller
-              name='lastName'
+              name="lastName"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <Label htmlFor='lastName-1' className='text-slate-300'>Apellido</Label>
+                  <Label htmlFor="lastName-1">Apellido</Label>
                   <Input
                     {...field}
                     aria-invalid={fieldState.invalid}
-                    id='lastName-1'
-                    placeholder='Duarte'
-                    className='bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500'
+                    id="lastName-1"
+                    placeholder="Duarte"
                   />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
             />
             <Controller
-              name='email'
+              name="email"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <Label htmlFor='email-1' className='text-slate-300'>Correo electronico</Label>
+                  <Label htmlFor="email-1">Correo electronico</Label>
                   <Input
                     {...field}
                     aria-invalid={fieldState.invalid}
-                    id='email-1'
-                    type='email'
-                    placeholder='pedro@biblioteca.com'
-                    className='bg-slate-800 border-slate-600 text-slate-100 placeholder:text-slate-500'
+                    id="email-1"
+                    type="email"
+                    placeholder="pedro@biblioteca.com"
                   />
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
             />
             <Controller
-              name='role'
+              name="role"
               control={form.control}
               render={({ field, fieldState }) => (
-                <Field orientation='responsive' data-invalid={fieldState.invalid}>
-                  <FieldLabel className='text-slate-300'>Rol</FieldLabel>
+                <Field orientation="responsive" data-invalid={fieldState.invalid}>
+                  <FieldLabel>Rol</FieldLabel>
                   <Select name={field.name} value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className='w-full max-w-48 bg-slate-800 border-slate-600 text-slate-100'>
+                    <SelectTrigger className="w-full max-w-48">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className='bg-slate-900 border-slate-700 text-slate-100'>
+                    <SelectContent>
                       <SelectGroup>
-                        <SelectLabel className='text-slate-400'>Roles disponibles</SelectLabel>
+                        <SelectLabel>Roles disponibles</SelectLabel>
                         {items.map((item) => (
-                          <SelectItem
-                            key={item.value}
-                            value={item.value}
-                            className='hover:bg-slate-800 text-slate-200'
-                          >
+                          <SelectItem key={item.value} value={item.value}>
                             {item.label}
                           </SelectItem>
                         ))}
@@ -192,30 +188,25 @@ export function DialogDemo() {
             />
           </FieldGroup>
           <DialogFooter>
-            <Field orientation='horizontal'>
+            <Field orientation="horizontal">
               {!loading ? (
                 <>
                   <Button
-                    type='button'
-                    variant='outline'
+                    type="button"
+                    variant="outline"
                     onClick={() => {
                       form.reset();
                       setOpen(false);
                     }}
-                    className='border-slate-600 text-slate-300 hover:bg-slate-800'
                   >
                     Cancelar
                   </Button>
-                  <Button
-                    type='submit'
-                    form='form-rhf-demo'
-                    className='bg-blue-600 hover:bg-blue-700 text-white font-medium'
-                  >
+                  <Button type="submit" form="form-crear-usuario">
                     Guardar
                   </Button>
                 </>
               ) : (
-                <Spinner className='size-8 text-blue-400' />
+                <Spinner />
               )}
             </Field>
           </DialogFooter>

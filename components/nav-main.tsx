@@ -25,21 +25,24 @@ type Props = {
 };
 
 // NavMain renderiza los links principales de navegacion.
-// Aplica estilos modernos estilo programador con acentos en azul e indicadores activos.
+// El item activo usa el estilo por defecto del sidebar (tokens del tema).
 export function NavMain({ items }: Props) {
   const pathname = usePathname();
   const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
-    const raw = localStorage.getItem('session_user');
-    if (raw) {
-      try {
-        const user = JSON.parse(raw);
-        setRole(user.role ?? null);
-      } catch {
-        // Ignora errores si el formato en localStorage no es JSON valido
+    const raf = requestAnimationFrame(() => {
+      const raw = localStorage.getItem('session_user');
+      if (raw) {
+        try {
+          const user = JSON.parse(raw);
+          setRole(user.role ?? null);
+        } catch {
+          // Ignora errores si el formato en localStorage no es JSON valido
+        }
       }
-    }
+    });
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   const itemsVisibles = items.filter((item) => {
@@ -49,9 +52,7 @@ export function NavMain({ items }: Props) {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className="text-slate-500 text-[11px] font-semibold tracking-wider uppercase px-2 mb-2">
-        Plataforma
-      </SidebarGroupLabel>
+      <SidebarGroupLabel>Plataforma</SidebarGroupLabel>
       <SidebarMenu className="space-y-1">
         {itemsVisibles.map((item) => {
           const activo =
@@ -63,14 +64,12 @@ export function NavMain({ items }: Props) {
                 tooltip={item.title}
                 isActive={activo}
                 render={<Link href={item.url} />}
-                className={
-                  activo
-                    ? 'bg-gradient-to-r from-blue-600/20 to-blue-500/5 text-blue-400 border border-blue-500/30 font-medium shadow-sm shadow-blue-950/50'
-                    : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 transition-colors'
-                }
+                className="group-data-[collapsible=icon]:justify-center"
               >
                 {item.icon}
-                <span className="text-sm">{item.title}</span>
+                <span className="group-data-[collapsible=icon]:hidden">
+                  {item.title}
+                </span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           );

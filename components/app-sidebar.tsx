@@ -25,13 +25,13 @@ const navItems = [
     items: [],
   },
   {
-    title: 'Maestros',
+    title: 'Libros',
     url: '/maestros',
     icon: <IconBook2 className="size-4" />,
     items: [],
   },
   {
-    title: 'Transacciones',
+    title: 'Prestamos',
     url: '/transacciones',
     icon: <IconArrowsExchange className="size-4" />,
     items: [],
@@ -47,35 +47,28 @@ const navItems = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar
-      collapsible="icon"
-      className="bg-slate-950 border-r border-slate-800/80"
-      {...props}
-    >
-      <SidebarHeader className="border-b border-slate-800/80 p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 shadow-md shadow-blue-900/30">
-            <IconBook2 className="size-5 text-white" />
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader className="border-b border-sidebar-border p-4 group-data-[collapsible=icon]:p-2">
+        <div className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground group-data-[collapsible=icon]:size-8">
+            <IconBook2 className="size-5 group-data-[collapsible=icon]:size-4" />
           </div>
-          <div className="flex flex-col leading-tight">
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-slate-100 text-sm tracking-tight">
-                BiblioLove
-              </span>
-              <span className="rounded bg-blue-500/10 px-1 py-0.2 text-[10px] font-mono font-medium text-blue-400 border border-blue-500/20">
-                v1.0
-              </span>
-            </div>
-            <span className="text-slate-500 text-xs">Sistema Bibliotecario</span>
+          <div className="flex min-w-0 flex-col leading-tight group-data-[collapsible=icon]:hidden">
+            <span className="font-heading text-sm font-semibold tracking-tight">
+              BiblioLove
+            </span>
+            <span className="truncate text-xs text-sidebar-foreground/60">
+              Sistema Bibliotecario
+            </span>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-4">
+      <SidebarContent className="px-2 py-4 group-data-[collapsible=icon]:px-0">
         <NavMain items={navItems} />
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-slate-800/80 p-2">
+      <SidebarFooter className="border-t border-sidebar-border p-2">
         <NavUser />
       </SidebarFooter>
 
