@@ -1,3 +1,16 @@
+/**
+ * API de Movimientos de Inventario.
+ *
+ * GET  /api/movimientos?maestroId=...  -> lista los movimientos de un maestro (desc).
+ * POST /api/movimientos                -> crea un movimiento y actualiza el saldo del maestro
+ *                                        de forma atomica (transaccion Prisma).
+ *
+ * Reglas de negocio:
+ *  - tipo debe ser ENTRADA o SALIDA.
+ *  - cantidad debe ser > 0.
+ *  - SALIDA no puede superar el saldo disponible del maestro.
+ *  - El userId corresponde al usuario en sesion que ejecuta el movimiento.
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
