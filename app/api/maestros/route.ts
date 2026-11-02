@@ -25,7 +25,9 @@ export async function GET(): Promise<NextResponse> {
   }
 }
 
-// POST /api/maestros - Crea un nuevo maestro con el saldo inicial dado
+// POST /api/maestros - Crea un nuevo maestro con el saldo inicial dado.
+// Si el saldo inicial es mayor a 0, registra un movimiento ENTRADA inicial para
+// que el saldo quede trazado en el historial de movimientos.
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const { nombre, saldo, userId } = await request.json();
@@ -38,12 +40,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const maestro = await prisma.maestro.create({
-      data: {
-        nombre,
-        saldo: Number(saldo),
-        userId,
-      },
+    const saldoNum = Number(saldo);
+    if (isNaN(saldoNum) || saldoNum < 0) {
+      return NextResponse.json(
+        { error: 'El saldo inicial no puede ser negativo' },
+        { status: 400 }
+      );
+    }
+
+    const maestro = await prisma.$transaction(async (tx) => {
+      const creado = await tx.maestro.create({
+        data: {
+          nombre,
+          saldo: saldoNum,
+          userId,
+        },
+      });
+
+      if (saldoNum > 0) {
+        await tx.movimiento.create({
+          data: {
+            tipo: 'ENTRADA',
+            cantidad: saldoNum,
+            maestroId: creado.id,
+            userId,
+          },
+        });
+      }
+
+      return creado;
     });
 
     return NextResponse.json({ maestro }, { status: 201 });
