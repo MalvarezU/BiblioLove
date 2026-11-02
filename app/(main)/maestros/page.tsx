@@ -49,24 +49,21 @@ export default async function MaestrosPage() {
           </span>
           <div>
             <h1 className="font-heading text-2xl font-semibold tracking-tight">
-              Catalogo de Libros
+              Catálogo de Libros y Materiales
             </h1>
             <p className="text-xs text-muted-foreground">
-              Titulos del inventario y control de existencias
+              Inventario de obras bibliográficas y control de existencias
             </p>
           </div>
         </div>
 
-        {esAdmin && usuario ? (
+        {/* Solo administradores pueden crear nuevos registros de libros */}
+        {esAdmin && usuario && (
           <DialogCrearMaestro userId={usuario.id} />
-        ) : (
-          <span className="inline-flex w-fit items-center gap-1.5 rounded-md border border-border bg-muted px-3 py-1.5 text-xs text-muted-foreground">
-            Solo lectura (Rol: {usuario?.role ?? 'USER'})
-          </span>
         )}
       </div>
 
-      {/* Contenedor de la tabla */}
+      {/* Contenedor de la tabla visible para todos los usuarios */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <TablaMaestros maestros={maestros} />
       </div>

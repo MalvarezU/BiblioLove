@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { IconShieldCheck, IconMail, IconEdit } from '@tabler/icons-react';
 
 type Props = {
   user: { id: string; email: string; role: 'ADMIN' | 'USER' };
@@ -32,6 +33,13 @@ export function EditRoleDialog({ user }: Props) {
   const [loading, setLoading] = React.useState(false);
   const [role, setRole] = React.useState<'ADMIN' | 'USER'>(user.role);
 
+  // Mantiene sincronizado el rol actual cada vez que se abre el dialogo
+  React.useEffect(() => {
+    if (open) {
+      setRole(user.role);
+    }
+  }, [open, user.role]);
+
   async function handleSave() {
     setLoading(true);
     try {
@@ -40,12 +48,19 @@ export function EditRoleDialog({ user }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role }),
       });
-      if (!res.ok) throw new Error('Error al actualizar rol');
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error || 'Error al actualizar rol');
+      }
+
       toast.success('Rol actualizado exitosamente');
       setOpen(false);
       router.refresh();
     } catch (e: unknown) {
-      toast.error((e as { message?: string })?.message || 'Error al actualizar rol');
+      toast.error(
+        e instanceof Error ? e.message : 'Error al actualizar el rol del usuario'
+      );
     } finally {
       setLoading(false);
     }
@@ -55,43 +70,64 @@ export function EditRoleDialog({ user }: Props) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-muted text-xs">
-            Editar rol
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 border-border text-foreground hover:bg-muted text-xs gap-1.5"
+          >
+            <IconEdit className="size-3.5" />
+            <span>Editar rol</span>
           </Button>
         }
       />
       <DialogContent className="sm:max-w-sm bg-card border border-border text-foreground">
         <DialogHeader>
-          <DialogTitle className="text-foreground">Editar usuario</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            {user.email}
+          <DialogTitle className="flex items-center gap-2 text-foreground font-heading">
+            <IconShieldCheck className="size-5 text-primary" />
+            Editar Rol de Usuario
+          </DialogTitle>
+          <DialogDescription className="text-muted-foreground flex items-center gap-1.5 pt-1">
+            <IconMail className="size-3.5 shrink-0 text-muted-foreground" />
+            <span className="font-medium text-foreground truncate">{user.email}</span>
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 py-2">
-          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rol</label>
+
+        <div className="space-y-3 py-3">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Rol del Sistema
+          </label>
           <Select value={role} onValueChange={(v) => setRole(v as 'ADMIN' | 'USER')}>
-            <SelectTrigger className="bg-muted border-border text-foreground">
+            <SelectTrigger className="w-full bg-muted/50 border-border text-foreground">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-card border-border text-foreground">
-              <SelectItem value="ADMIN">ADMIN</SelectItem>
-              <SelectItem value="USER">USER</SelectItem>
+              <SelectItem value="ADMIN">
+                <span className="font-medium">ADMIN</span> — Administrador total
+              </SelectItem>
+              <SelectItem value="USER">
+                <span className="font-medium">USER</span> — Usuario lector
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
-        <DialogFooter>
-          {!loading ? (
-            <>
-              <Button variant="outline" onClick={() => setOpen(false)} className="border-border text-foreground hover:bg-muted">
-                Cancelar
-              </Button>
-              <Button onClick={handleSave} className="bg-primary hover:bg-primary/90 text-white">
-                Guardar
-              </Button>
-            </>
-          ) : (
-            <Spinner className="size-6 text-primary" />
-          )}
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            variant="outline"
+            disabled={loading}
+            onClick={() => setOpen(false)}
+            className="border-border text-foreground hover:bg-muted"
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={loading}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
+          >
+            {loading && <Spinner className="size-4" />}
+            {loading ? 'Guardando...' : 'Guardar'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

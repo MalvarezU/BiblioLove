@@ -17,13 +17,14 @@ import {
   IconCheck,
   IconAlertTriangle,
   IconX,
+  IconArchive,
 } from '@tabler/icons-react';
 
 type Maestro = {
   id: string;
   nombre: string;
   saldo: number;
-  createdAt: Date;
+  createdAt: Date | string;
   creadoPor: {
     name: string;
     lastName: string | null;
@@ -33,6 +34,15 @@ type Maestro = {
 type Props = {
   maestros: Maestro[];
 };
+
+function formatFecha(dateInput: Date | string): string {
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '-';
+  const dia = String(d.getDate()).padStart(2, '0');
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const anio = d.getFullYear();
+  return `${dia}/${mes}/${anio}`;
+}
 
 function claseStock(saldo: number) {
   if (saldo > 5) return 'bg-success/10 text-success';
@@ -52,7 +62,8 @@ export function TablaMaestros({ maestros }: Props) {
       (m) =>
         m.nombre.toLowerCase().includes(term) ||
         m.creadoPor.name.toLowerCase().includes(term) ||
-        (m.creadoPor.lastName && m.creadoPor.lastName.toLowerCase().includes(term))
+        (m.creadoPor.lastName && m.creadoPor.lastName.toLowerCase().includes(term)) ||
+        m.id.toLowerCase().includes(term)
     );
   }, [maestros, busqueda]);
 
@@ -64,7 +75,7 @@ export function TablaMaestros({ maestros }: Props) {
           <IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Buscar por libro o creador..."
+            placeholder="Buscar por título, código o creador..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="pl-9"
@@ -72,7 +83,7 @@ export function TablaMaestros({ maestros }: Props) {
           {busqueda && (
             <button
               onClick={() => setBusqueda('')}
-              aria-label="Limpiar busqueda"
+              aria-label="Limpiar búsqueda"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <IconX className="size-3.5" />
@@ -83,7 +94,7 @@ export function TablaMaestros({ maestros }: Props) {
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span>Mostrando:</span>
           <span className="font-medium text-foreground">
-            {filtrados.length} de {maestros.length}
+            {filtrados.length} de {maestros.length} {maestros.length === 1 ? 'libro' : 'libros'}
           </span>
         </div>
       </div>
@@ -93,11 +104,11 @@ export function TablaMaestros({ maestros }: Props) {
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-6 w-24">Codigo</TableHead>
-              <TableHead>Titulo del Libro / Material</TableHead>
-              <TableHead className="w-40">Saldo Disponible</TableHead>
+              <TableHead className="pl-6 w-28">Código</TableHead>
+              <TableHead>Título de la Obra</TableHead>
+              <TableHead className="w-48">Disponibilidad</TableHead>
               <TableHead>Registrado Por</TableHead>
-              <TableHead className="w-36 pr-6 text-right">Fecha de Alta</TableHead>
+              <TableHead className="w-36 pr-6 text-right">Fecha de Registro</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -105,15 +116,21 @@ export function TablaMaestros({ maestros }: Props) {
               filtrados.map((maestro) => {
                 const stockDisponible = maestro.saldo > 5;
                 const stockBajo = maestro.saldo > 0 && maestro.saldo <= 5;
+                const agotado = maestro.saldo === 0;
 
                 return (
                   <TableRow key={maestro.id}>
+                    {/* Codigo de formato uniforme */}
                     <TableCell className="pl-6">
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-                        {maestro.id.slice(0, 6)}
+                      <span
+                        className="inline-block font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-muted/80 text-foreground/80 border border-border/60"
+                        title={`ID completo: ${maestro.id}`}
+                      >
+                        #{maestro.id.slice(-6).toUpperCase()}
                       </span>
                     </TableCell>
 
+                    {/* Titulo */}
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
@@ -123,16 +140,25 @@ export function TablaMaestros({ maestros }: Props) {
                       </div>
                     </TableCell>
 
+                    {/* Saldo / Disponibilidad */}
                     <TableCell>
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${claseStock(maestro.saldo)}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${claseStock(
+                          maestro.saldo
+                        )}`}
                       >
                         {stockDisponible && <IconCheck className="size-3" />}
                         {stockBajo && <IconAlertTriangle className="size-3" />}
-                        {maestro.saldo.toLocaleString('es-CO')} u.
+                        {agotado && <IconArchive className="size-3" />}
+                        {agotado
+                          ? 'Agotado (0 unid.)'
+                          : stockBajo
+                          ? `Bajo (${maestro.saldo.toLocaleString('es-CO')} unid.)`
+                          : `Disponible (${maestro.saldo.toLocaleString('es-CO')} unid.)`}
                       </span>
                     </TableCell>
 
+                    {/* Creador */}
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <span className="flex size-6 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
@@ -144,14 +170,11 @@ export function TablaMaestros({ maestros }: Props) {
                       </div>
                     </TableCell>
 
+                    {/* Fecha de Registro */}
                     <TableCell className="pr-6 text-right">
                       <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                         <IconCalendar className="size-3" />
-                        {new Date(maestro.createdAt).toLocaleDateString('es-CO', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                        })}
+                        {formatFecha(maestro.createdAt)}
                       </span>
                     </TableCell>
                   </TableRow>
@@ -165,8 +188,8 @@ export function TablaMaestros({ maestros }: Props) {
                     <p className="text-sm font-medium">No se encontraron libros</p>
                     <p className="text-xs">
                       {busqueda
-                        ? 'Intenta con otro termino de busqueda'
-                        : 'El catalogo se encuentra vacio'}
+                        ? 'Intenta con otro término de búsqueda'
+                        : 'El catálogo se encuentra vacío'}
                     </p>
                   </div>
                 </TableCell>
