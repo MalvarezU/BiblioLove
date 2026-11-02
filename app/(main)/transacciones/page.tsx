@@ -1,5 +1,15 @@
 'use client';
 
+/**
+ * Pagina de Transacciones de Inventario.
+ *
+ * Permite seleccionar un Maestro y visualizar/crear sus movimientos, con una
+ * grafica de evolucion de saldos diarios, resumen de totales y filtro por tipo.
+ *
+ * Accesible para roles USER y ADMIN. La creacion de movimientos esta disponible
+ * para ambos roles; el saldo se actualiza atomicamente en el backend.
+ */
+
 import React from 'react';
 import { toast } from 'sonner';
 import { IconArrowsExchange, IconPlus, IconChartLine } from '@tabler/icons-react';
