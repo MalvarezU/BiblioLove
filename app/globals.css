@@ -18,7 +18,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-fraunces);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-display);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -53,6 +54,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-rating: var(--rating);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -62,81 +64,85 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Tema claro: papel crema, marrones calidos y naranjas otonales */
+/* BibloLove — claro: crema papel, tinta cafe y borgona love */
 :root {
-  --background: oklch(0.978 0.009 88);
-  --foreground: oklch(0.29 0.042 55);
-  --card: oklch(0.996 0.005 92);
-  --card-foreground: oklch(0.29 0.042 55);
-  --popover: oklch(0.996 0.005 92);
-  --popover-foreground: oklch(0.29 0.042 55);
-  --primary: oklch(0.62 0.14 42);
-  --primary-foreground: oklch(0.98 0.01 90);
-  --secondary: oklch(0.94 0.015 105);
-  --secondary-foreground: oklch(0.33 0.04 55);
-  --muted: oklch(0.948 0.01 75);
-  --muted-foreground: oklch(0.52 0.03 55);
-  --accent: oklch(0.925 0.04 60);
-  --accent-foreground: oklch(0.31 0.04 55);
-  --destructive: oklch(0.55 0.16 30);
-  --success: oklch(0.6 0.1 150);
-  --warning: oklch(0.72 0.12 72);
-  --info: oklch(0.6 0.08 235);
-  --border: oklch(0.5 0.045 55 / 0.15);
-  --input: oklch(0.5 0.045 55 / 0.24);
-  --ring: oklch(0.62 0.14 42);
-  --chart-1: oklch(0.75 0.11 65);
-  --chart-2: oklch(0.7 0.09 145);
-  --chart-3: oklch(0.65 0.12 40);
-  --chart-4: oklch(0.68 0.1 85);
-  --chart-5: oklch(0.6 0.07 30);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.96 0.012 82);
-  --sidebar-foreground: oklch(0.28 0.04 55);
-  --sidebar-primary: oklch(0.6 0.13 45);
-  --sidebar-primary-foreground: oklch(0.98 0.01 90);
-  --sidebar-accent: oklch(0.91 0.025 75);
-  --sidebar-accent-foreground: oklch(0.3 0.04 55);
-  --sidebar-border: oklch(0.5 0.045 55 / 0.14);
-  --sidebar-ring: oklch(0.62 0.14 42);
+  --radius: 0.75rem;
+  --background: hsl(40 33% 98%);
+  --foreground: hsl(24 10% 15%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(24 10% 15%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(24 10% 15%);
+  --primary: hsl(348 63% 47%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(35 25% 90%);
+  --secondary-foreground: hsl(24 10% 22%);
+  --muted: hsl(35 20% 93%);
+  --muted-foreground: hsl(25 8% 42%);
+  --accent: hsl(38 45% 90%);
+  --accent-foreground: hsl(24 10% 20%);
+  --destructive: hsl(0 72% 45%);
+  --success: hsl(140 40% 40%);
+  --warning: hsl(38 80% 50%);
+  --info: hsl(25 8% 42%);
+  --border: hsl(35 15% 87%);
+  --input: hsl(35 15% 87%);
+  --ring: hsl(348 63% 47%);
+  --rating: hsl(38 80% 50%);
+  --rating-strong: hsl(38 80% 43%);
+  --chart-1: hsl(348 63% 47%);
+  --chart-2: hsl(38 80% 50%);
+  --chart-3: hsl(140 20% 40%);
+  --chart-4: hsl(25 60% 55%);
+  --chart-5: hsl(330 40% 55%);
+  --sidebar: hsl(35 25% 94%);
+  --sidebar-foreground: hsl(24 10% 15%);
+  --sidebar-primary: hsl(348 63% 47%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(38 45% 90%);
+  --sidebar-accent-foreground: hsl(24 10% 20%);
+  --sidebar-border: hsl(35 15% 87%);
+  --sidebar-ring: hsl(348 63% 47%);
 }
 
-/* Tema oscuro: marron-carbon calido, crema y ambar */
+/* BibloLove — oscuro: chocolate calido para lectura nocturna */
 .dark {
-  --background: oklch(0.2 0.014 68);
-  --foreground: oklch(0.95 0.015 85);
-  --card: oklch(0.245 0.017 68);
-  --card-foreground: oklch(0.95 0.015 85);
-  --popover: oklch(0.245 0.017 68);
-  --popover-foreground: oklch(0.95 0.015 85);
-  --primary: oklch(0.75 0.13 55);
-  --primary-foreground: oklch(0.2 0.03 45);
-  --secondary: oklch(0.31 0.02 85);
-  --secondary-foreground: oklch(0.95 0.015 85);
-  --muted: oklch(0.285 0.015 60);
-  --muted-foreground: oklch(0.7 0.02 65);
-  --accent: oklch(0.33 0.035 55);
-  --accent-foreground: oklch(0.95 0.015 85);
-  --destructive: oklch(0.65 0.15 30);
-  --success: oklch(0.72 0.11 150);
-  --warning: oklch(0.78 0.12 75);
-  --info: oklch(0.7 0.08 235);
-  --border: oklch(0.95 0.015 85 / 0.1);
-  --input: oklch(0.95 0.015 85 / 0.16);
-  --ring: oklch(0.75 0.13 55);
-  --chart-1: oklch(0.75 0.11 65);
-  --chart-2: oklch(0.7 0.09 145);
-  --chart-3: oklch(0.65 0.12 40);
-  --chart-4: oklch(0.68 0.1 85);
-  --chart-5: oklch(0.6 0.07 30);
-  --sidebar: oklch(0.24 0.017 65);
-  --sidebar-foreground: oklch(0.95 0.015 85);
-  --sidebar-primary: oklch(0.72 0.12 50);
-  --sidebar-primary-foreground: oklch(0.2 0.03 45);
-  --sidebar-accent: oklch(0.31 0.025 60);
-  --sidebar-accent-foreground: oklch(0.95 0.015 85);
-  --sidebar-border: oklch(0.95 0.015 85 / 0.1);
-  --sidebar-ring: oklch(0.75 0.13 55);
+  --background: hsl(20 8% 10%);
+  --foreground: hsl(35 20% 92%);
+  --card: hsl(20 8% 13%);
+  --card-foreground: hsl(35 20% 92%);
+  --popover: hsl(20 8% 13%);
+  --popover-foreground: hsl(35 20% 92%);
+  --primary: hsl(348 70% 53%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(20 6% 18%);
+  --secondary-foreground: hsl(35 20% 90%);
+  --muted: hsl(20 6% 16%);
+  --muted-foreground: hsl(30 8% 62%);
+  --accent: hsl(20 6% 18%);
+  --accent-foreground: hsl(35 20% 92%);
+  --destructive: hsl(0 62% 55%);
+  --success: hsl(140 30% 50%);
+  --warning: hsl(38 90% 62%);
+  --info: hsl(30 8% 62%);
+  --border: hsl(30 10% 20%);
+  --input: hsl(30 10% 20%);
+  --ring: hsl(348 70% 53%);
+  --rating: hsl(38 90% 62%);
+  --rating-strong: hsl(38 80% 50%);
+  --chart-1: hsl(348 70% 58%);
+  --chart-2: hsl(38 90% 62%);
+  --chart-3: hsl(140 20% 50%);
+  --chart-4: hsl(25 60% 60%);
+  --chart-5: hsl(330 40% 60%);
+  --sidebar: hsl(20 8% 12%);
+  --sidebar-foreground: hsl(35 20% 92%);
+  --sidebar-primary: hsl(348 70% 53%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(20 6% 18%);
+  --sidebar-accent-foreground: hsl(35 20% 92%);
+  --sidebar-border: hsl(30 10% 20%);
+  --sidebar-ring: hsl(348 70% 53%);
 }
 
 @layer base {
@@ -152,7 +158,27 @@
   html {
     @apply font-sans;
   }
+  ::selection {
+    background: hsl(348 63% 47% / 0.2);
+  }
 }
+
+/* Animaciones de la identidad BibloLove */
+@keyframes heartbeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.35); }
+  50% { transform: scale(0.92); }
+  75% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+.heart-pop { animation: heartbeat 0.6s ease-in-out; transform-origin: center; }
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.float-soft { animation: float-soft 5s ease-in-out infinite; }
+.float-soft-delayed { animation: float-soft 6s ease-in-out 1.2s infinite; }
 
 /* Menús y selects sin efecto de vidrio: fondos solidos */
 [data-slot="dropdown-menu-content"],

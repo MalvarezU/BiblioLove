@@ -1,17 +1,17 @@
 import type { Metadata } from 'next';
-import { Fraunces, Source_Sans_3 } from 'next/font/google';
+import { Fraunces, Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
 
-const sans = Source_Sans_3({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-sans',
+  variable: '--font-inter',
   display: 'swap',
 });
 
-const display = Fraunces({
+const fraunces = Fraunces({
   subsets: ['latin'],
-  variable: '--font-display',
+  variable: '--font-fraunces',
   display: 'swap',
 });
 
@@ -27,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     <html
       lang="es"
       suppressHydrationWarning
-      className={`${sans.variable} ${display.variable} h-full`}
+      className={`${inter.variable} ${fraunces.variable} h-full`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased font-sans">
         <ThemeProvider>{children}</ThemeProvider>
