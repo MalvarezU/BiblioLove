@@ -256,7 +256,7 @@ export default function TransaccionesPage() {
           <DialogContent className="sm:max-w-md">
             <DialogHeader className="space-y-1">
               <DialogTitle className="text-lg font-bold">
-                Agregar movimiento
+                Agregar movimiento — {maestroSeleccionado?.nombre ?? ''}
               </DialogTitle>
               <DialogDescription className="text-xs">
                 Maestro: {maestroSeleccionado?.nombre ?? ''}
@@ -284,6 +284,12 @@ export default function TransaccionesPage() {
                   onChange={(e) => setCantidad(Number(e.target.value) || 0)}
                 />
               </div>
+              <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                Saldo disponible: <span className="font-mono font-semibold text-foreground">{maestroSeleccionado?.saldo ?? 0}</span>
+                {tipo === 'SALIDA' && cantidad > (maestroSeleccionado?.saldo ?? 0) && (
+                  <span className="ml-2 text-destructive">La cantidad supera el saldo disponible.</span>
+                )}
+              </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-border">
               {!submitting ? (
@@ -291,7 +297,11 @@ export default function TransaccionesPage() {
                   <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                     Cancelar
                   </Button>
-                  <Button type="button" onClick={crearMovimiento}>
+                  <Button
+                    type="button"
+                    onClick={crearMovimiento}
+                    disabled={tipo === 'SALIDA' && cantidad > (maestroSeleccionado?.saldo ?? 0)}
+                  >
                     Crear movimiento
                   </Button>
                 </>
