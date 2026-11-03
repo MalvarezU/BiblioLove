@@ -33,12 +33,11 @@ export function EditRoleDialog({ user }: Props) {
   const [loading, setLoading] = React.useState(false);
   const [role, setRole] = React.useState<'ADMIN' | 'USER'>(user.role);
 
-  // Mantiene sincronizado el rol actual cada vez que se abre el dialogo
-  React.useEffect(() => {
-    if (open) {
-      setRole(user.role);
-    }
-  }, [open, user.role]);
+  // Sincroniza el rol cuando se abre el dialogo (en handler, no en effect)
+  function handleOpenChange(next: boolean) {
+    if (next) setRole(user.role);
+    setOpen(next);
+  }
 
   async function handleSave() {
     setLoading(true);
@@ -67,7 +66,7 @@ export function EditRoleDialog({ user }: Props) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           <Button
