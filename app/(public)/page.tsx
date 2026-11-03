@@ -15,9 +15,9 @@ function compacto(n: number) {
 
 async function getLandingStats() {
   const [libros, lectores, prestamos] = await Promise.all([
-    prisma.maestro.count({ where: { deleted: false } }),
+    prisma.book.count(),
     prisma.user.count({ where: { deleted: false } }),
-    prisma.movimiento.count({ where: { tipo: 'SALIDA' } }),
+    prisma.checkout.count(),
   ]);
   return { libros, lectores, prestamos };
 }

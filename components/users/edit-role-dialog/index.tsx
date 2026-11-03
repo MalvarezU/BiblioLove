@@ -24,20 +24,14 @@ import {
 import { IconShieldCheck, IconMail, IconEdit } from '@tabler/icons-react';
 
 type Props = {
-  user: { id: string; email: string; role: 'ADMIN' | 'USER' };
+  user: { id: string; email: string; role: string };
 };
 
 export function EditRoleDialog({ user }: Props) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  const [role, setRole] = React.useState<'ADMIN' | 'USER'>(user.role);
-
-  // Sincroniza el rol cuando se abre el dialogo (en handler, no en effect)
-  function handleOpenChange(next: boolean) {
-    if (next) setRole(user.role);
-    setOpen(next);
-  }
+  const [role, setRole] = React.useState<string>(user.role);
 
   async function handleSave() {
     setLoading(true);
@@ -63,6 +57,11 @@ export function EditRoleDialog({ user }: Props) {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) setRole(user.role);
   }
 
   return (
@@ -95,7 +94,7 @@ export function EditRoleDialog({ user }: Props) {
           <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Rol del Sistema
           </label>
-          <Select value={role} onValueChange={(v) => setRole(v as 'ADMIN' | 'USER')}>
+          <Select value={role} onValueChange={(v) => setRole(v ?? user.role)}>
             <SelectTrigger className="w-full bg-muted/50 border-border text-foreground">
               <SelectValue />
             </SelectTrigger>

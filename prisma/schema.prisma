@@ -10,79 +10,120 @@ datasource db {
   provider = "postgresql"
 }
 
-// Roles disponibles en el sistema
-enum Enum_Role {
-  ADMIN
-  USER
+model Book {
+  id         String   @id @default(uuid()) @db.Uuid
+  categoryId Int      @map("category") @db.SmallInt
+  genreId    Int      @map("genre") @db.SmallInt
+  title      String   @db.VarChar(255)
+  authorId   Int      @map("author")
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  genre    Genre    @relation(fields: [genreId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  author   Author   @relation(fields: [authorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  items    Item[]
+
+  @@map("book")
 }
 
-// Tipos de movimiento de inventario en la biblioteca
-enum Enum_Movimiento_Tipo {
-  ENTRADA // Ingreso de libros al inventario
-  SALIDA  // Prestamo o retiro de libros del inventario
+model Genre {
+  id    Int    @id @default(autoincrement()) @db.SmallInt
+  name  String @db.VarChar(255)
+  books Book[]
+
+  @@map("genre")
 }
 
-// Usuario del sistema con autenticacion por email y password
+model Category {
+  id    Int    @id @default(autoincrement()) @db.SmallInt
+  name  String @db.VarChar(255)
+  books Book[]
+
+  @@map("category")
+}
+
+model Author {
+  id        Int     @id @default(autoincrement())
+  name      String  @db.VarChar(255)
+  lastName  String  @map("last_name") @db.VarChar(255)
+  biography String? @db.Text
+  books     Book[]
+
+  @@map("author")
+}
+
+model Item {
+  id          String    @id @default(uuid()) @db.Uuid
+  bookId      String    @map("book") @db.Uuid
+  /// Valores permitidos: Disponible | Reservado | En préstamo | Perdido
+  status      String    @default("Disponible") @db.VarChar(255)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Date
+  updatedAt   DateTime? @map("updated_at") @db.Date
+  enabled     Boolean   @default(true)
+  deleted     Boolean   @default(false)
+  createdById String    @map("created_by") @db.Uuid
+  publisher   String    @db.VarChar(255)
+
+  book         Book          @relation(fields: [bookId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdBy    User          @relation("ItemCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reservations Reservation[]
+  checkouts    Checkout[]
+
+  @@map("item")
+}
+
 model User {
-  id         String      @id @default(cuid())
-  name       String
-  email      String      @unique
-  lastName   String?
-  password   String
-  deleted    Boolean     @default(false)
-  enabled    Boolean     @default(true)
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  role       Enum_Role   @default(USER)
-  profile    Profile?
-  // Maestros creados por este usuario
-  maestros   Maestro[]
-  // Movimientos registrados por este usuario
-  movimientos Movimiento[]
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(255)
+  lastName  String?  @map("last_name") @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  address   String?  @db.VarChar(255)
+  phone     String?  @db.VarChar(255)
+  photo     String?  @db.VarChar(255)
+  enabled   Boolean  @default(true)
+  deleted   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Date
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Date
+  role      String   @default("USER") @db.VarChar(255)
+
+  items        Item[]        @relation("ItemCreatedBy")
+  reservations Reservation[]
+  checkouts    Checkout[]
+
+  @@map("user")
 }
 
-// Perfil extendido del usuario con datos de contacto
-model Profile {
-  id        String   @id @default(cuid())
-  address   String
-  phone     String
-  image     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @unique
+model Reservation {
+  id          String   @id @default(uuid()) @db.Uuid
+  itemId      String   @map("item") @db.Uuid
+  userId      String   @map("user") @db.Uuid
+  issuedDate  DateTime @map("issued_date") @db.Date
+  minCheckout DateTime @map("min_checkout") @db.Date
+  maxCheckout DateTime @map("max_checkout") @db.Date
+  /// Valores permitidos: Activa | Cancelada | Cumplida | Reclamado
+  status      String   @default("Activa") @db.VarChar(255)
+
+  item      Item       @relation(fields: [itemId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user      User       @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  checkouts Checkout[]
+
+  @@map("reservation")
 }
 
-// Maestro representa un tipo de libro o material en la biblioteca.
-// Cada maestro tiene un saldo que refleja las unidades disponibles.
-model Maestro {
-  id          String       @id @default(cuid())
-  nombre      String
-  // Saldo actual de unidades disponibles en inventario
-  saldo       Float        @default(0)
-  deleted     Boolean      @default(false)
-  enabled     Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  // Usuario que creo este maestro
-  creadoPor   User         @relation(fields: [userId], references: [id])
-  userId      String
-  // Movimientos asociados a este maestro
-  movimientos Movimiento[]
-}
+model Checkout {
+  id            String    @id @default(uuid()) @db.Uuid
+  itemId        String    @map("item") @db.Uuid
+  userId        String    @map("user") @db.Uuid
+  checkoutDate  DateTime  @map("checkout_date") @db.Date
+  dueDate       DateTime  @map("due_date") @db.Date
+  returnDate    DateTime? @map("return_date") @db.Date
+  reservationId String?   @map("reservation") @db.Uuid
+  /// Valores permitidos: Prestado | Entregado | Entregado con retraso
+  status        String    @default("Prestado") @db.VarChar(255)
 
-// Movimiento registra cada transaccion de entrada o salida de un maestro.
-// El saldo del maestro se recalcula sumando todos sus movimientos.
-model Movimiento {
-  id         String               @id @default(cuid())
-  tipo       Enum_Movimiento_Tipo
-  cantidad   Float
-  createdAt  DateTime             @default(now())
-  updatedAt  DateTime             @updatedAt
-  // Maestro al que pertenece este movimiento
-  maestro    Maestro              @relation(fields: [maestroId], references: [id])
-  maestroId  String
-  // Usuario que registro el movimiento
-  ejecutadoPor User              @relation(fields: [userId], references: [id])
-  userId       String
+  item        Item         @relation(fields: [itemId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user        User         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reservation Reservation? @relation(fields: [reservationId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@map("checkout")
 }
