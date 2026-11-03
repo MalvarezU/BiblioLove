@@ -1,13 +1,7 @@
 // Tipos compartidos del sistema BiblioLove.
-// Se usan tanto en las API routes como en los componentes del cliente.
 
-// Roles del sistema
 export type Role = 'ADMIN' | 'USER';
 
-// Tipo de movimiento de inventario
-export type TipoMovimiento = 'ENTRADA' | 'SALIDA';
-
-// Usuario del sistema (sin password)
 export type UsuarioPublico = {
   id: string;
   name: string;
@@ -19,35 +13,44 @@ export type UsuarioPublico = {
   createdAt: Date;
 };
 
-// Maestro (libro o material de biblioteca) con datos de creador
-export type MaestroConCreador = {
+export type LibroConRelaciones = {
   id: string;
-  nombre: string;
-  saldo: number;
-  createdAt: Date;
-  creadoPor: {
-    name: string;
-    lastName: string | null;
-  };
+  title: string;
+  author: { id: number; name: string; lastName: string };
+  category: { id: number; name: string };
+  genre: { id: number; name: string };
+  items: {
+    id: string;
+    status: string;
+    enabled: boolean;
+    deleted: boolean;
+    publisher: string;
+  }[];
 };
 
-// Movimiento de inventario con datos del ejecutor
-export type MovimientoConEjecutor = {
+export type CheckoutConRelaciones = {
   id: string;
-  tipo: TipoMovimiento;
-  cantidad: number;
-  createdAt: Date;
-  ejecutadoPor: {
-    name: string;
-    lastName: string | null;
-  };
+  checkoutDate: Date;
+  dueDate: Date;
+  returnDate: Date | null;
+  status: string;
+  item: { book: { title: string } };
+  user: { name: string; lastName: string | null };
 };
 
-// Usuario que tiene sesion activa (guardado en localStorage y cookie)
+export type ReservaConRelaciones = {
+  id: string;
+  issuedDate: Date;
+  minCheckout: Date;
+  maxCheckout: Date;
+  status: string;
+  item: { book: { title: string } };
+  user: { name: string; lastName: string | null };
+};
+
 export type SesionUsuario = {
   id: string;
   name: string;
   email: string;
   role: Role;
 };
-

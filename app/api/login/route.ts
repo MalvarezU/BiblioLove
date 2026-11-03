@@ -13,12 +13,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, name: true, email: true, password: true, role: true, deleted: true },
+      select: { id: true, name: true, email: true, password: true, role: true, deleted: true, enabled: true },
     });
 
-    // Usuario no existe o fue eliminado
+    // Usuario no existe, fue eliminado o esta deshabilitado
     if (!user || user.deleted) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 401 });
+    }
+
+    if (!user.enabled) {
+      return NextResponse.json({ error: 'Usuario deshabilitado' }, { status: 403 });
     }
 
     // Comparacion directa (el proyecto usa password en texto plano segun el codigo base)

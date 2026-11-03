@@ -9,7 +9,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   const session = request.cookies.get('session_user_id')?.value;
-  if (!session && (pathname.startsWith('/home') || pathname.startsWith('/maestros') || pathname.startsWith('/transacciones') || pathname.startsWith('/users'))) {
+  if (!session && (pathname.startsWith('/home') || pathname.startsWith('/maestros') || pathname.startsWith('/prestamos') || pathname.startsWith('/reservas') || pathname.startsWith('/transacciones') || pathname.startsWith('/users'))) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);

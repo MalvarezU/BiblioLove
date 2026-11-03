@@ -6,8 +6,8 @@ Proyecto evaluativo de Ingenieria Web desarrollado en Next.js (App Router), Reac
 
 BiblioLove es un sistema de administracion de biblioteca que permite:
 - **Autenticacion** de usuarios con roles diferenciados (ADMIN / USER).
-- **Gestion de Maestros**: catalogo de libros/materiales con control de saldos de inventario.
-- **Gestion de Transacciones**: registro de movimientos de inventario (entradas y salidas) con historial y grafica de evolucion de saldos.
+- **Gestion de Libros**: catalogo de obras con categorias, generos, autores y ejemplares.
+- **Gestion de Prestamos y Reservas**: control de checkouts, devoluciones, fechas de vencimiento y reservas.
 - **Gestion de Usuarios**: administracion de cuentas y roles (solo ADMIN).
 
 ---
@@ -18,8 +18,8 @@ El sistema cuenta con usuarios precargados en la base de datos de Supabase:
 
 | Rol | Correo Electronico | Contraseña | Permisos |
 | :--- | :--- | :--- | :--- |
-| **ADMIN** | `admin@biblioteca.com` | `admin123` | Acceso total: Maestros (crear y ver), Usuarios (administrar), Transacciones |
-| **USER** | `lector@biblioteca.com` | `user123` | Acceso a Maestros (solo ver) y Transacciones |
+| **ADMIN** | `admin@biblioteca.com` | `admin123` | Acceso total: Libros (crear y ver), Usuarios (administrar), Prestamos y reservas |
+| **USER** | `lector@biblioteca.com` | `user123` | Acceso a Libros (solo ver) y Prestamos |
 
 ---
 
@@ -61,8 +61,8 @@ npx prisma generate --config prisma7.config.ts
 npx tsx prisma/seed.ts
 ```
 
-El seed crea 2 usuarios (admin y lector), 4 maestros de prueba y movimientos de inventario
-de ejemplo para que la grafica y la tabla de Transacciones tengan contenido desde el inicio.
+El seed crea usuarios de prueba, las categorias y generos base, autores, libros, ejemplares,
+reservas y prestamos de ejemplo para que los dashboards tengan contenido desde el inicio.
 
 ### 5. Iniciar Servidor de Desarrollo
 
@@ -79,54 +79,51 @@ La aplicacion estara disponible en [http://localhost:3000](http://localhost:3000
 - `/`: Landing publica con opcion para iniciar sesion.
 - `/login`: Formulario de autenticacion.
 - `/home`: Panel de control general con resumen estadistico.
-- `/maestros`: Catalogo de libros/materiales y control de saldos.
-- `/transacciones`: Registro y visualizacion de movimientos de inventario.
+- `/maestros`: Catalogo de libros, autores, categorias, generos y ejemplares.
+- `/prestamos`: Historial de prestamos y devoluciones (admin ve todos, usuario ve los propios).
+- `/reservas`: Historial de reservas (admin ve todas, usuario ve las propias).
 - `/users`: Administracion de usuarios y roles (solo ADMIN).
 
 ---
 
-## Modulo de Transacciones (detalle)
+## Modulo de Libros (detalle)
 
-La pagina `/transacciones` permite visualizar y registrar movimientos de inventario por maestro.
+La pagina `/maestros` muestra el catalogo bibliografico.
 
 ### Funcionalidades
 
-1. **Selector de Maestro**: dropdown para elegir el maestro a visualizar.
-2. **Tabla de movimientos**: muestra id, fecha, tipo (ENTRADA/SALIDA), cantidad y persona que ejecuto el movimiento.
-3. **Agregar movimiento**: dialogo con:
-   - Titulo que muestra el maestro seleccionado.
-   - Tipo de movimiento (entrada o salida).
-   - Cantidad de unidades.
-   - Saldo disponible del maestro (validacion preventiva).
-   - Boton cancelar (cierra el dialogo).
-   - Boton crear (registra el movimiento en la BD asociado al usuario en sesion, muestra loading y mensaje de exito/error; al tener exito cierra el dialogo y actualiza la tabla).
-4. **Grafica de evolucion de saldos diarios**: SVG interactivo con area, tooltips al hover, leyenda (puntos, min, max, actual) y estado vacio con CTA.
-5. **Resumen e innovacion**: 4 tarjetas (movimientos, entradas, salidas, neto) y filtro por tipo (Todos/Entrada/Salida) con contador.
-
-### Reglas de negocio
-
-- Tanto USER como ADMIN pueden acceder y crear movimientos.
-- Una SALIDA no puede superar el saldo disponible (validado en backend y en el dialogo).
-- Al crear un Maestro con saldo inicial > 0, se registra automaticamente un movimiento ENTRADA inicial para trazabilidad.
-- El saldo del maestro se actualiza atomicamente (transaccion Prisma) al crear cada movimiento.
+- Tabla: titulo, autor, categoria, genero y ejemplares disponibles.
+- Buscador en tiempo real por titulo, autor, categoria o genero.
+- Boton "Nuevo Libro" (solo ADMIN): registra una obra con categoria, genero, autor y su primer ejemplar.
+- Boton de gestion de ejemplares (solo ADMIN): permite marcar ejemplares como deteriorados (enabled=false) o perdidos (enabled=false, deleted=true).
+- USER puede ver el catalogo pero no crear libros.
 
 ### Endpoints
 
-- `GET /api/movimientos?maestroId=...` — lista movimientos de un maestro (ordenados por fecha desc).
-- `POST /api/movimientos` — crea un movimiento y actualiza el saldo del maestro. Body: `{ maestroId, tipo, cantidad, userId }`.
+- `GET /api/books` — lista libros con autor, categoria, genero y ejemplares.
+- `POST /api/books` — crea un libro y sus ejemplares iniciales.
+- `GET /api/books/[id]` — detalle de un libro.
+- `PATCH /api/books/[id]` — actualiza datos bibliograficos.
 
 ---
 
-## Modulo de Maestros (detalle)
+## Modulos de Prestamos y Reservas (detalle)
 
-La pagina `/maestros` muestra el catalogo de libros/materiales.
+Las paginas `/prestamos` y `/reservas` muestran el historial de prestamos y reservas de la biblioteca. El administrador ve todos los registros; cada usuario ve unicamente los suyos.
 
 ### Funcionalidades
 
-- Tabla: id, nombre, saldo, creador.
-- Buscador en tiempo real por nombre o creador.
-- Boton "Agregar" (solo ADMIN): dialogo con nombre, saldo inicial, cancelar y crear (con loading y mensaje de exito/error; al tener exito cierra y actualiza la tabla).
-- USER puede ver pero no crear.
+- Resumen de prestamos totales, activos, con retraso y entregados.
+- Tabla de checkouts: libro, usuario, fecha de prestamo, vencimiento, devolucion y estado.
+- Boton "Nuevo Prestamo" (solo ADMIN): selecciona un libro con ejemplares disponibles, un ejemplar y un usuario activo. El prestamo dura 30 dias.
+- Listado de prestamos activos con boton "Recibir": registra la devolucion, marca el prestamo como Entregado o Entregado con retraso y devuelve el ejemplar a Disponible.
+- Los usuarios con prestamos en retraso no pueden recibir nuevos prestamos.
+- Boton "Nueva Reserva" (solo ADMIN): registra una reserva con fecha de reclamo al dia siguiente y fecha final 5 dias despues.
+- Listado de reservas activas con boton "Reclamar": crea el prestamo de 30 dias y cambia la reserva al estado Reclamado.
+- Las reservas activas vencidas se cancelan automaticamente al consultar el panel o mediante `/api/cron/reservations`.
+- Un ejemplar reservado no puede reservarse para otro usuario.
+- Los usuarios con prestamos en retraso no pueden realizar reservas ni reclamarlas.
+- Tabla de reservas: libro, usuario, fecha de emision, fecha de reclamo, fecha final de reclamo y estado.
 
 ---
 
@@ -173,12 +170,12 @@ El tema se define en `app/globals.css` (tokens CSS) y se aplica via Tailwind 4 (
 
 ```
 app/
-  (main)/          # Rutas autenticadas (home, maestros, transacciones, users)
+  (main)/          # Rutas autenticadas (home, maestros, prestamos, reservas, users)
   (public)/        # Rutas publicas (landing, login)
-  api/             # API routes (login, maestros, movimientos, users)
+  api/             # API routes (login, books, user, users)
 components/
   ui/              # Componentes shadcn/ui
-  maestros/        # Dialogo y tabla de maestros
+  maestros/        # Dialogo y tabla de libros
   users/           # Dialogo y tabla de usuarios
   landing/         # Componentes de la landing
 lib/

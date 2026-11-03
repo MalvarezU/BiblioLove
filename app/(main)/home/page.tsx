@@ -17,76 +17,9 @@ import {
   IconPackage,
   IconArrowsExchange,
   IconChartBar,
+  IconAlertTriangle,
+  IconCalendarEvent,
 } from '@tabler/icons-react';
-
-async function getDashboardData() {
-  const [totalMaestros, totalUsuarios, maestrosRecientes, sumSaldoResult] =
-    await Promise.all([
-      prisma.maestro.count({ where: { deleted: false } }),
-      prisma.user.count({ where: { deleted: false } }),
-      prisma.maestro.findMany({
-        where: { deleted: false },
-        orderBy: { createdAt: 'desc' },
-        take: 4,
-        select: {
-          id: true,
-          nombre: true,
-          saldo: true,
-          createdAt: true,
-          creadoPor: {
-            select: { name: true, lastName: true },
-          },
-        },
-      }),
-      prisma.maestro.aggregate({
-        where: { deleted: false },
-        _sum: { saldo: true },
-      }),
-    ]);
-
-  return {
-    totalMaestros,
-    totalUsuarios,
-    maestrosRecientes,
-    totalUnidades: sumSaldoResult._sum.saldo ?? 0,
-  };
-}
-
-async function getPrestamosUsuario(userId: string) {
-  return prisma.movimiento.findMany({
-    where: { tipo: 'SALIDA', userId },
-    orderBy: { createdAt: 'desc' },
-    take: 8,
-    select: {
-      id: true,
-      cantidad: true,
-      createdAt: true,
-      maestro: { select: { nombre: true } },
-    },
-  });
-}
-
-async function getAllPrestamos() {
-  return prisma.movimiento.findMany({
-    where: { tipo: 'SALIDA' },
-    orderBy: { createdAt: 'desc' },
-    take: 8,
-    select: {
-      id: true,
-      cantidad: true,
-      createdAt: true,
-      userId: true,
-      maestro: { select: { nombre: true } },
-      ejecutadoPor: { select: { name: true, lastName: true } },
-    },
-  });
-}
-
-function claseStock(saldo: number) {
-  if (saldo > 5) return 'bg-success/10 text-success';
-  if (saldo > 0) return 'bg-warning/10 text-warning';
-  return 'bg-destructive/10 text-destructive';
-}
 
 function monthKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -102,11 +35,11 @@ function lastMonths(n: number) {
   return out;
 }
 
-function buildMonthly(data: { createdAt: Date; cantidad: number }[], months: string[]) {
+function buildMonthlyCounts(dates: Date[], months: string[]) {
   const map = new Map(months.map((m) => [m, 0]));
-  data.forEach((d) => {
-    const k = monthKey(new Date(d.createdAt));
-    if (map.has(k)) map.set(k, (map.get(k) ?? 0) + d.cantidad);
+  dates.forEach((d) => {
+    const k = monthKey(new Date(d));
+    if (map.has(k)) map.set(k, (map.get(k) ?? 0) + 1);
   });
   return months.map((m) => ({ mes: m, valor: map.get(m) ?? 0 }));
 }
@@ -114,12 +47,15 @@ function buildMonthly(data: { createdAt: Date; cantidad: number }[], months: str
 function BarChart({ data }: { data: { mes: string; valor: number }[] }) {
   const max = Math.max(1, ...data.map((d) => d.valor));
   return (
-    <div className="flex items-end gap-2 h-40">
+    <div className="flex h-40 items-end gap-2">
       {data.map((d) => (
-        <div key={d.mes} className="flex-1 flex flex-col items-center gap-1">
+        <div key={d.mes} className="flex flex-1 flex-col items-center gap-1">
           <div
             className="w-full rounded-t bg-primary/80 transition-all"
-            style={{ height: `${(d.valor / max) * 100}%`, minHeight: d.valor > 0 ? '4px' : '0' }}
+            style={{
+              height: `${(d.valor / max) * 100}%`,
+              minHeight: d.valor > 0 ? '4px' : '0',
+            }}
             title={`${d.mes}: ${d.valor}`}
           />
           <span className="text-[10px] text-muted-foreground">{d.mes.slice(5)}</span>
@@ -129,80 +65,139 @@ function BarChart({ data }: { data: { mes: string; valor: number }[] }) {
   );
 }
 
+function formatFecha(dateInput: Date | string | null): string {
+  if (!dateInput) return '—';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('es-CO');
+}
+
+type CheckoutVista = {
+  id: string;
+  checkoutDate: Date;
+  dueDate: Date;
+  returnDate: Date | null;
+  status: string;
+  userId: string;
+  item: { book: { title: string } };
+  user: { name: string; lastName: string | null };
+};
+
+function estadoPrestamo(c: CheckoutVista, hoy: Date) {
+  if (c.returnDate) {
+    return new Date(c.returnDate).getTime() > new Date(c.dueDate).getTime()
+      ? { texto: 'Devuelto con retraso', clase: 'bg-warning/10 text-warning' }
+      : { texto: 'Devuelto', clase: 'bg-success/10 text-success' };
+  }
+  if (new Date(c.dueDate).getTime() < hoy.getTime()) {
+    return { texto: 'Retrasado', clase: 'bg-destructive/10 text-destructive' };
+  }
+  return { texto: 'Activo', clase: 'bg-primary/10 text-primary' };
+}
+
 export default async function HomePage() {
   const cookieStore = await cookies();
   const userId = cookieStore.get('session_user_id')?.value;
+  const hoy = new Date();
 
-  const [data, usuario, prestamos, allPrestamos] = await Promise.all([
-    getDashboardData(),
-    userId
-      ? prisma.user.findUnique({
-          where: { id: userId },
-          select: { name: true, role: true, email: true, createdAt: true },
-        })
-      : Promise.resolve(null),
-    userId ? getPrestamosUsuario(userId) : Promise.resolve([]),
-    getAllPrestamos(),
-  ]);
+  const usuario = userId
+    ? await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, role: true, email: true, createdAt: true },
+      })
+    : null;
 
   const isAdmin = usuario?.role === 'ADMIN';
-  const months = lastMonths(6);
 
-  // Usuario: historial de prestamos
-  const userLoans = await (userId
-    ? prisma.movimiento.findMany({ where: { tipo: 'SALIDA', userId }, select: { createdAt: true, cantidad: true } })
-    : Promise.resolve([]));
-  const totalUserLoans = userLoans.reduce((a, m) => a + m.cantidad, 0);
-  const monthsSince = Math.max(
+  const [totalLibros, totalEjemplares, totalUsuarios, checkouts, reservasActivas] =
+    await Promise.all([
+      prisma.book.count(),
+      prisma.item.count({ where: { deleted: false, enabled: true } }),
+      prisma.user.count({ where: { deleted: false } }),
+      prisma.checkout.findMany({
+        where: isAdmin ? {} : { userId: userId ?? '' },
+        orderBy: { checkoutDate: 'desc' },
+        select: {
+          id: true,
+          checkoutDate: true,
+          dueDate: true,
+          returnDate: true,
+          status: true,
+          userId: true,
+          item: { select: { book: { select: { title: true } } } },
+          user: { select: { name: true, lastName: true } },
+        },
+      }),
+      prisma.reservation.count({
+        where: isAdmin
+          ? { status: 'Activa' }
+          : { userId: userId ?? '', status: 'Activa' },
+      }),
+    ]);
+
+  const months = lastMonths(6);
+  const activos = checkouts.filter((c) => !c.returnDate);
+  const retrasados = checkouts.filter((c) => {
+    const fin = c.returnDate ?? hoy;
+    return new Date(fin).getTime() > new Date(c.dueDate).getTime();
+  });
+
+  const monthlyCheckouts = buildMonthlyCounts(
+    checkouts.map((c) => c.checkoutDate),
+    months
+  );
+  const monthlyOverdue = buildMonthlyCounts(
+    retrasados.map((c) => c.dueDate),
+    months
+  );
+
+  const mesesActivo = Math.max(
     1,
-    (new Date().getFullYear() - new Date(usuario?.createdAt ?? new Date()).getFullYear()) * 12 +
-      (new Date().getMonth() - new Date(usuario?.createdAt ?? new Date()).getMonth()) +
+    (hoy.getFullYear() - new Date(usuario?.createdAt ?? hoy).getFullYear()) * 12 +
+      (hoy.getMonth() - new Date(usuario?.createdAt ?? hoy).getMonth()) +
       1
   );
-  const avgUserPerMonth = totalUserLoans / monthsSince;
-  const hoy = new Date();
-  const overdueUser = userLoans.filter((m) => (hoy.getTime() - new Date(m.createdAt).getTime()) / (1000 * 60 * 60 * 24) > 30);
-  const totalOverdueUser = overdueUser.reduce((a, m) => a + m.cantidad, 0);
-  const avgOverdueUserPerMonth = totalOverdueUser / monthsSince;
-  const userMonthly = buildMonthly(userLoans, months);
-  const userOverdueMonthly = buildMonthly(overdueUser, months);
 
-  // Admin: todos los prestamos
-  const allLoansList = await prisma.movimiento.findMany({ where: { tipo: 'SALIDA' }, select: { createdAt: true, cantidad: true, userId: true } });
-  const totalAllLoans = allLoansList.reduce((a, m) => a + m.cantidad, 0);
-  const activeAll = allLoansList.filter((m) => (hoy.getTime() - new Date(m.createdAt).getTime()) / (1000 * 60 * 60 * 24) <= 30);
-  const overdueAll = allLoansList.filter((m) => (hoy.getTime() - new Date(m.createdAt).getTime()) / (1000 * 60 * 60 * 24) > 30);
-  const totalOverdueAll = overdueAll.reduce((a, m) => a + m.cantidad, 0);
-  const allMonthly = buildMonthly(allLoansList, months);
-  const allOverdueMonthly = buildMonthly(overdueAll, months);
-  const monthsGlobal = Math.max(1, months.length);
-  const avgAllPerMonth = totalAllLoans / monthsGlobal;
-  const avgOverdueAllPerMonth = totalOverdueAll / monthsGlobal;
+  const promedioMensual = checkouts.length / (isAdmin ? months.length : mesesActivo);
+  const promedioRetrasos = retrasados.length / (isAdmin ? months.length : mesesActivo);
 
   const metricas = [
     {
-      titulo: 'Titulos registrados',
-      valor: data.totalMaestros,
-      detalle: 'Libros y materiales en el catalogo',
+      titulo: 'Libros registrados',
+      valor: totalLibros,
+      detalle: 'Obras únicas en el catálogo',
       icono: IconBook2,
     },
     {
-      titulo: 'Unidades disponibles',
-      valor: data.totalUnidades,
-      detalle: 'Ejemplares listos para prestar',
+      titulo: 'Ejemplares activos',
+      valor: totalEjemplares,
+      detalle: 'Unidades disponibles para préstamo',
       icono: IconPackage,
     },
     {
       titulo: 'Usuarios activos',
-      valor: data.totalUsuarios,
+      valor: totalUsuarios,
       detalle: 'Administradores y lectores',
       icono: IconUsers,
     },
+    {
+      titulo: 'Préstamos activos',
+      valor: activos.length,
+      detalle: 'Préstamos pendientes de devolución',
+      icono: IconArrowsExchange,
+    },
+    {
+      titulo: 'Reservas activas',
+      valor: reservasActivas,
+      detalle: 'Reservas pendientes de retiro',
+      icono: IconCalendarEvent,
+    },
   ];
+
+  const recientes = checkouts.slice(0, 5);
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Bienvenida */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-heading text-2xl font-semibold tracking-tight md:text-3xl">
@@ -210,20 +205,29 @@ export default async function HomePage() {
           </h1>
           <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">
             {isAdmin
-              ? 'Panel de administracion bibliotecaria. Totales y prestamos globales.'
-              : 'Tu historial de prestamos y actividad personal.'}
+              ? 'Panel de administración: catálogo, ejemplares y préstamos de toda la biblioteca.'
+              : 'Tu historial de préstamos, retrasos y actividad personal.'}
           </p>
         </div>
-        <Button nativeButton={false} render={<Link href="/maestros" />}>
-          Ver catalogo
-          <IconArrowRight />
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button nativeButton={false} render={<Link href="/maestros" />}>
+            Ver catálogo
+            <IconArrowRight />
+          </Button>
+          <Button
+            nativeButton={false}
+            variant="outline"
+            render={<Link href="/reservas" />}
+          >
+            {isAdmin ? 'Reservas' : 'Mis reservas'}
+            <IconCalendarEvent />
+          </Button>
+        </div>
       </div>
 
       {isAdmin && (
         <>
-          {/* Metricas admin */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
             {metricas.map((metrica) => (
               <Card key={metrica.titulo}>
                 <CardHeader className="flex-row items-center justify-between">
@@ -246,60 +250,38 @@ export default async function HomePage() {
             ))}
           </div>
 
-          {/* Graficas admin prestamos */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-sm">
                   <IconChartBar className="size-4 text-primary" />
-                  Prestamos totales por mes
-                </CardTitle>
-                <CardDescription>Total: {totalAllLoans} unidades</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <BarChart data={allMonthly} />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Promedio mensual: {avgAllPerMonth.toFixed(1)} u.
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <IconChartBar className="size-4 text-primary" />
-                  Prestamos vigentes (ultimos 30 dias)
+                  Préstamos por mes
                 </CardTitle>
                 <CardDescription>
-                  {activeAll.reduce((a, m) => a + m.cantidad, 0)} unidades activas
+                  Total: {checkouts.length} · Promedio mensual: {promedioMensual.toFixed(1)}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="font-heading text-3xl font-semibold">
-                  {activeAll.length}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Movimientos de salida recientes
-                </p>
+                <BarChart data={monthlyCheckouts} />
               </CardContent>
             </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-sm">
-                  <IconChartBar className="size-4 text-primary" />
-                  Prestamos con retraso
+                  <IconAlertTriangle className="size-4 text-primary" />
+                  Retrasos por mes
                 </CardTitle>
-                <CardDescription>Total: {totalOverdueAll} unidades</CardDescription>
+                <CardDescription>
+                  Total: {retrasados.length} · Promedio mensual: {promedioRetrasos.toFixed(1)}
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <BarChart data={allOverdueMonthly} />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Promedio mensual de retrasos: {avgOverdueAllPerMonth.toFixed(1)} u.
-                </p>
+                <BarChart data={monthlyOverdue} />
               </CardContent>
             </Card>
           </div>
 
-          {/* Ultimos prestamos globales */}
           <Card>
             <CardHeader>
               <CardAction>
@@ -307,7 +289,7 @@ export default async function HomePage() {
                   nativeButton={false}
                   variant="ghost"
                   size="sm"
-                  render={<Link href="/transacciones" />}
+                  render={<Link href="/prestamos" />}
                 >
                   Ver todos
                   <IconArrowRight />
@@ -315,40 +297,43 @@ export default async function HomePage() {
               </CardAction>
               <CardTitle className="flex items-center gap-2">
                 <IconArrowsExchange className="size-4 text-primary" />
-                Prestamos recientes
+                Préstamos recientes
               </CardTitle>
-              <CardDescription>Ultimos movimientos de salida</CardDescription>
+              <CardDescription>Movimientos de toda la biblioteca</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
-              {allPrestamos.length === 0 ? (
+              {recientes.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">
-                  Aun no hay prestamos.
+                  Aún no hay préstamos registrados.
                 </p>
               ) : (
-                allPrestamos.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                        <IconBook2 className="size-4" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {p.maestro.nombre}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {p.ejecutadoPor.name} ·{' '}
-                          {new Date(p.createdAt).toLocaleDateString('es-CO')}
-                        </p>
+                recientes.map((c) => {
+                  const estado = estadoPrestamo(c as CheckoutVista, hoy);
+                  return (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                          <IconBook2 className="size-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {c.item.book.title}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {c.user.name} {c.user.lastName ?? ''} ·{' '}
+                            {formatFecha(c.checkoutDate)}
+                          </p>
+                        </div>
                       </div>
+                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${estado.clase}`}>
+                        {estado.texto}
+                      </span>
                     </div>
-                    <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                      {p.cantidad} u.
-                    </span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </CardContent>
           </Card>
@@ -357,7 +342,6 @@ export default async function HomePage() {
 
       {!isAdmin && (
         <>
-          {/* Graficas usuario */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <Card>
               <CardHeader>
@@ -366,36 +350,32 @@ export default async function HomePage() {
                   Libros prestados por mes
                 </CardTitle>
                 <CardDescription>
-                  Total desde tu registro: {totalUserLoans} u.
+                  Total desde tu registro: {checkouts.length} · Promedio mensual:{' '}
+                  {promedioMensual.toFixed(1)}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <BarChart data={userMonthly} />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Promedio mensual: {avgUserPerMonth.toFixed(1)} u.
-                </p>
+                <BarChart data={monthlyCheckouts} />
               </CardContent>
             </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-sm">
-                  <IconChartBar className="size-4 text-primary" />
+                  <IconAlertTriangle className="size-4 text-primary" />
                   Retrasos en entregas por mes
                 </CardTitle>
                 <CardDescription>
-                  Total retrasos: {totalOverdueUser} u.
+                  Total retrasos: {retrasados.length} · Promedio mensual:{' '}
+                  {promedioRetrasos.toFixed(1)}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <BarChart data={userOverdueMonthly} />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Promedio mensual de retrasos: {avgOverdueUserPerMonth.toFixed(1)} u.
-                </p>
+                <BarChart data={monthlyOverdue} />
               </CardContent>
             </Card>
           </div>
 
-          {/* Mis prestamos activos */}
           <Card>
             <CardHeader>
               <CardAction>
@@ -403,7 +383,7 @@ export default async function HomePage() {
                   nativeButton={false}
                   variant="ghost"
                   size="sm"
-                  render={<Link href="/transacciones" />}
+                  render={<Link href="/prestamos" />}
                 >
                   Ver todos
                   <IconArrowRight />
@@ -411,20 +391,18 @@ export default async function HomePage() {
               </CardAction>
               <CardTitle className="flex items-center gap-2">
                 <IconArrowsExchange className="size-4 text-primary" />
-                Mis prestamos activos
+                Mis préstamos activos
               </CardTitle>
-              <CardDescription>Prestamos recientes (ultimos 30 dias)</CardDescription>
+              <CardDescription>Préstamos pendientes de devolución</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
-              {prestamos.length === 0 ? (
+              {activos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border px-4 py-8 text-center">
                   <IconBook2 className="size-8 text-muted-foreground stroke-1" />
                   <div>
-                    <p className="text-sm font-medium">
-                      No tienes prestamos activos
-                    </p>
+                    <p className="text-sm font-medium">No tienes préstamos activos</p>
                     <p className="mt-1 max-w-md text-xs text-muted-foreground">
-                      Explora el catalogo y reserva tu proximo titulo.
+                      Explora el catálogo y reserva tu próximo título.
                     </p>
                   </div>
                   <Button
@@ -438,87 +416,36 @@ export default async function HomePage() {
                   </Button>
                 </div>
               ) : (
-                prestamos.map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                        <IconBook2 className="size-4" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {p.maestro.nombre}
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                          {new Date(p.createdAt).toLocaleDateString('es-CO')}
-                        </p>
+                activos.map((c) => {
+                  const estado = estadoPrestamo(c as CheckoutVista, hoy);
+                  return (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                          <IconBook2 className="size-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {c.item.book.title}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            Vence: {formatFecha(c.dueDate)}
+                          </p>
+                        </div>
                       </div>
+                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${estado.clase}`}>
+                        {estado.texto}
+                      </span>
                     </div>
-                    <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-                      {p.cantidad} u.
-                    </span>
-                  </div>
-                ))
+                  );
+                })
               )}
             </CardContent>
           </Card>
         </>
-      )}
-
-      {/* Ultimos titulos (solo admin maybe) */}
-      {isAdmin && (
-        <Card>
-          <CardHeader>
-            <CardAction>
-              <Button
-                nativeButton={false}
-                variant="ghost"
-                size="sm"
-                render={<Link href="/maestros" />}
-              >
-                Ver todos
-                <IconArrowRight />
-              </Button>
-            </CardAction>
-            <CardTitle>Ultimos titulos registrados</CardTitle>
-            <CardDescription>
-              Altas recientes en el inventario bibliotecario
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {data.maestrosRecientes.length === 0 && (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                Aun no hay titulos registrados.
-              </p>
-            )}
-            {data.maestrosRecientes.map((m) => (
-              <div
-                key={m.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                    <IconBook2 className="size-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{m.nombre}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      Por {m.creadoPor.name} ·{' '}
-                      {new Date(m.createdAt).toLocaleDateString('es-CO')}
-                    </p>
-                  </div>
-                </div>
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${claseStock(m.saldo)}`}
-                >
-                  {m.saldo} en stock
-                </span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
       )}
     </div>
   );

@@ -14,6 +14,7 @@ import {
   IconBook2,
   IconUsers,
   IconArrowsExchange,
+  IconCalendarEvent,
   IconDashboard,
 } from '@tabler/icons-react';
 
@@ -31,9 +32,15 @@ const navItems = [
     items: [],
   },
   {
-    title: 'Prestamos',
-    url: '/transacciones',
+    title: 'Préstamos',
+    url: '/prestamos',
     icon: <IconArrowsExchange className="size-4" />,
+    items: [],
+  },
+  {
+    title: 'Reservas',
+    url: '/reservas',
+    icon: <IconCalendarEvent className="size-4" />,
     items: [],
   },
   {

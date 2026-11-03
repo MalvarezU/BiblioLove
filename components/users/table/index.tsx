@@ -32,7 +32,7 @@ type UserItem = {
   email: string;
   enabled: boolean;
   deleted: boolean;
-  role: 'ADMIN' | 'USER';
+  role: string;
   createdAt: Date | string;
 };
 
